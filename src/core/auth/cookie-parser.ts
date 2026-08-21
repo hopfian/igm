@@ -1,6 +1,6 @@
 // ⚠️  DOC-SYNC: Any changes to this file MUST be reflected in docs/core.md (§ auth.ts — Authentication)
 //     If cookie parsing logic, format support, or exports change, update the docs.
-import * as fs from "fs";
+import * as fs from "node:fs";
 
 export function loadCookies(cookieSource: string = "cookies.txt"): string {
 	if (cookieSource.includes("=") && !cookieSource.endsWith(".txt")) {
@@ -76,7 +76,7 @@ export function mergeCookies(
 		if (idx !== -1) {
 			const key = primaryPair.substring(0, idx).trim();
 			const val = primaryPair.substring(idx + 1).trim();
-			
+
 			// Handle deletion (Instagram sends Max-Age=0 or Expires in past to delete cookies)
 			if (val === '""' || val === "") {
 				cookieMap.delete(key);

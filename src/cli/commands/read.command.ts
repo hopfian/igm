@@ -2,11 +2,14 @@
 //     If commands, aliases, or options change, update the command table in the docs.
 import type { IGClient } from "../../core/http/ig-client";
 import { Profile } from "../../modules/identity/services/profile.service";
+import { renderProfile } from "../../modules/identity/ui/identity.renderer";
 import { Explore } from "../../modules/timeline/services/explore.service";
 import { Reels } from "../../modules/timeline/services/reels.service";
 import { Timeline } from "../../modules/timeline/services/timeline.service";
-import { renderProfile } from "../../modules/identity/ui/identity.renderer";
-import { renderTimeline, renderComments } from "../../modules/timeline/ui/timeline.renderer";
+import {
+	renderComments,
+	renderTimeline,
+} from "../../modules/timeline/ui/timeline.renderer";
 import { handleInteractiveState } from "../../shared/ui/interactive-paginator";
 import { spin } from "../../shared/ui/spinner";
 import {
@@ -50,7 +53,7 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${items.length} posts loaded`);
+				s?.succeed(`${items.length} posts loaded`);
 				renderTimeline(items.slice(0, count));
 
 				const totalPages = Math.ceil(items.length / count);
@@ -85,8 +88,8 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 
 				const profile = new Profile(client);
 				const isNumeric = /^\d+$/.test(argv.user_id);
-				const info = isNumeric 
-					? await profile.getProfile(argv.user_id) 
+				const info = isNumeric
+					? await profile.getProfile(argv.user_id)
 					: await profile.getProfileByUsername(argv.user_id);
 
 				if (exporting) {
@@ -94,7 +97,7 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`@${info.username}`);
+				s?.succeed(`@${info.username}`);
 				renderProfile(info);
 			},
 		)
@@ -118,8 +121,8 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 
 				const profile = new Profile(client);
 				const isNumeric = /^\d+$/.test(argv.user_id);
-				const userId = isNumeric 
-					? argv.user_id 
+				const userId = isNumeric
+					? argv.user_id
 					: (await profile.getProfileByUsername(argv.user_id)).id;
 				const items = await profile.getProfileFeed(userId);
 				const count = argv.c;
@@ -129,7 +132,7 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${items.length} posts loaded`);
+				s?.succeed(`${items.length} posts loaded`);
 				renderTimeline(items.slice(0, count));
 
 				const totalPages = Math.ceil(items.length / count);
@@ -173,7 +176,7 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${items.length} posts loaded`);
+				s?.succeed(`${items.length} posts loaded`);
 				renderTimeline(items.slice(0, count));
 
 				const totalPages = Math.ceil(items.length / count);
@@ -217,7 +220,7 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${items.length} reels loaded`);
+				s?.succeed(`${items.length} reels loaded`);
 				renderTimeline(items.slice(0, count));
 
 				const totalPages = Math.ceil(items.length / count);
@@ -262,7 +265,7 @@ export const registerReadCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${comments.length} comments loaded`);
+				s?.succeed(`${comments.length} comments loaded`);
 				renderComments(comments.slice(0, argv.c));
 			},
 		);

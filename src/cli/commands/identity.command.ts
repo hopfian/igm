@@ -113,7 +113,7 @@ export const registerSocialCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed("loaded");
+				s?.succeed("loaded");
 				renderFriendship(status, argv.id);
 			},
 		);

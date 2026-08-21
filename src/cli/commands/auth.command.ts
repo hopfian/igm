@@ -86,9 +86,12 @@ async function handleLogin(argv: any) {
 			response = await auth.login(username, password);
 		} catch (error: any) {
 			if (error.statusCode === 400 && error.body) {
-				const body = typeof error.body === "string" ? JSON.parse(error.body) : error.body;
+				const body =
+					typeof error.body === "string" ? JSON.parse(error.body) : error.body;
 				if (body.message === "checkpoint_required") {
-					throw new Error("Instagram flagged this login as suspicious. Please log in via browser first to clear the checkpoint.");
+					throw new Error(
+						"Instagram flagged this login as suspicious. Please log in via browser first to clear the checkpoint.",
+					);
 				}
 				if (body.two_factor_required) {
 					response = body;
@@ -104,9 +107,9 @@ async function handleLogin(argv: any) {
 		if (response?.two_factor_required) {
 			spinner.stop("Two-factor authentication required.");
 			const twoFactorInfo = response.two_factor_info;
-			
-			const contactInfo = twoFactorInfo.obfuscated_phone_number 
-				? `(ending in ${twoFactorInfo.obfuscated_phone_number})` 
+
+			const contactInfo = twoFactorInfo.obfuscated_phone_number
+				? `(ending in ${twoFactorInfo.obfuscated_phone_number})`
 				: "authenticator app";
 
 			const codePrompt = await p.text({
@@ -121,9 +124,13 @@ async function handleLogin(argv: any) {
 
 			const code = codePrompt as string;
 			spinner.start("Verifying 2FA code...");
-			
+
 			try {
-				await auth.submit2FA(username, twoFactorInfo.two_factor_identifier, code);
+				await auth.submit2FA(
+					username,
+					twoFactorInfo.two_factor_identifier,
+					code,
+				);
 			} catch (e: any) {
 				if (e.statusCode === 400) {
 					throw new Error("Invalid or expired 2FA code.");
@@ -136,10 +143,10 @@ async function handleLogin(argv: any) {
 
 		// Save profile
 		const cookies = client.getCookies();
-		
+
 		const profiles = config.profiles || {};
 		profiles[profileName] = cookies;
-		
+
 		saveConfig({
 			profiles,
 			activeProfile: profileName,
@@ -169,12 +176,14 @@ async function handleSwitch(argv: any) {
 async function handleList() {
 	const config = loadConfig();
 	const profiles = Object.keys(config.profiles || {});
-	
+
 	console.log(chalk.bold("\nConfigured Profiles:\n"));
-	
+
 	const localActive = config.activeProfile === "local" ? " (active)" : "";
-	console.log(`  ${config.activeProfile === "local" ? chalk.green("•") : " "} local${chalk.gray(localActive)}`);
-	
+	console.log(
+		`  ${config.activeProfile === "local" ? chalk.green("•") : " "} local${chalk.gray(localActive)}`,
+	);
+
 	for (const p of profiles) {
 		const isActive = p === config.activeProfile;
 		const marker = isActive ? chalk.green("•") : " ";

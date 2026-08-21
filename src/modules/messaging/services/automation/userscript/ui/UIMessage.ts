@@ -90,6 +90,10 @@ export class UIMessage extends UIComponent {
 		};
 		collectTargets(this.root, 0);
 
+		for (let i = 0; i < hoverTargets.length; i++) {
+			dispatchHoverIn(hoverTargets[i]);
+		}
+
 		const actionButton = await this.waitForElement(
 			this.root,
 			() => this._findActionButton(this.root),
@@ -176,7 +180,10 @@ export class UIMessage extends UIComponent {
 		const result = await this.clickElementAndWaitFor(
 			actionButton,
 			this.root.ownerDocument.body,
-			() => (this.root.ownerDocument.body.contains(actionsMenuElement) === false ? true : null),
+			() =>
+				this.root.ownerDocument.body.contains(actionsMenuElement) === false
+					? true
+					: null,
 			abortController,
 			500,
 		);

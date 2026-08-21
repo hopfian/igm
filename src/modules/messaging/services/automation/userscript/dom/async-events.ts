@@ -72,7 +72,12 @@ export async function clickElementAndWaitFor<T extends Element | boolean>(
 	abortController: AbortController,
 	timeoutMs?: number,
 ): Promise<T | null> {
-	const promise = waitForElement(target, getElement, abortController, timeoutMs);
+	const promise = waitForElement(
+		target,
+		getElement,
+		abortController,
+		timeoutMs,
+	);
 	clickTarget.click();
 	const immediateElement = getElement();
 	if (immediateElement) return immediateElement;

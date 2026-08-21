@@ -6,7 +6,7 @@ export const registerDashboardCommands = (yargs: any, client: IGClient) => {
 		["dashboard", "ui", "tui"],
 		"Launch the interactive full-screen dashboard",
 		{},
-		async (argv: any) => {
+		async (_argv: any) => {
 			await startDashboard(client);
 		},
 	);

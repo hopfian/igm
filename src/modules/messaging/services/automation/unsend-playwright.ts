@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 export interface UnsendConfig {
 	headless?: boolean;
@@ -39,9 +39,9 @@ export async function runUnsendPlaywright(
 		path.join(__dirname, "assets", "idmu.user.js"),
 		path.join(__dirname, "..", "..", "assets", "idmu.user.js"),
 		path.join(process.cwd(), "dist", "assets", "idmu.user.js"),
-		path.join(path.dirname(process.execPath), "dist", "assets", "idmu.user.js")
+		path.join(path.dirname(process.execPath), "dist", "assets", "idmu.user.js"),
 	];
-	
+
 	let userscriptPath = "";
 	for (const p of possiblePaths) {
 		if (fs.existsSync(p)) {
@@ -52,7 +52,7 @@ export async function runUnsendPlaywright(
 
 	if (!userscriptPath) {
 		throw new Error(
-			`Userscript not found. Searched in:\n${possiblePaths.join('\n')}\nPlease build it first.`,
+			`Userscript not found. Searched in:\n${possiblePaths.join("\n")}\nPlease build it first.`,
 		);
 	}
 
@@ -61,44 +61,44 @@ export async function runUnsendPlaywright(
 		.replace(/^\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==\s*/m, "")
 		.trim();
 
-	let chromium;
+	let chromium: any;
 	try {
 		try {
 			const playwright = require("playwright");
 			chromium = playwright.chromium;
-		} catch (e1) {
-			const { createRequire } = require("module");
+		} catch (_e1) {
+			const { createRequire } = require("node:module");
 			try {
-				chromium = createRequire(process.cwd() + "/index.js")("playwright").chromium;
-			} catch (e2) {
+				chromium = createRequire(`${process.cwd()}/index.js`)(
+					"playwright",
+				).chromium;
+			} catch (_e2) {
 				chromium = createRequire(process.execPath)("playwright").chromium;
 			}
 		}
-	} catch (err) {
+	} catch (_err) {
 		throw new Error(
 			"Playwright is not installed. Please install it globally or locally (npm install playwright) to use the unsend automation feature.",
 		);
 	}
 
-	const browser = await chromium.launch({
+	let totalUnsent = 0;
+	const context = await chromium.launchPersistentContext("", {
 		headless: config.headless !== false,
 		slowMo: config.slowMo || 0,
 		args: [
 			"--no-sandbox",
 			"--disable-blink-features=AutomationControlled",
-			"--start-maximized"
+			"--start-maximized",
+			"--app=data:,",
 		],
+		viewport: null, // Allow viewport to resize to window
+		userAgent:
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+		locale: "en-US",
 	});
 
-	let totalUnsent = 0;
 	try {
-		const context = await browser.newContext({
-			viewport: null, // Allow viewport to resize to window
-			userAgent:
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-			locale: "en-US",
-		});
-
 		// Remove automation fingerprint and inject UI pink glow
 		await context.addInitScript(() => {
 			Object.defineProperty(navigator, "webdriver", { get: () => undefined });
@@ -106,15 +106,41 @@ export async function runUnsendPlaywright(
 				get: () => [1, 2, 3, 4, 5],
 			});
 			(window as any).chrome = { runtime: {} };
-			
+
 			// Inject animated UI and Dynamic Island
 			window.addEventListener("DOMContentLoaded", () => {
 				const style = document.createElement("style");
 				style.textContent = `
+					html::-webkit-scrollbar, body::-webkit-scrollbar {
+						display: none !important;
+						width: 0 !important;
+						height: 0 !important;
+					}
+					html, body {
+						scrollbar-width: none !important;
+						-ms-overflow-style: none !important;
+						overflow: hidden !important;
+					}
 					@keyframes idmuPulse {
 						0% { box-shadow: inset 0 0 40px 10px rgba(255, 20, 147, 0.5); }
 						50% { box-shadow: inset 0 0 80px 20px rgba(255, 20, 147, 0.9); }
 						100% { box-shadow: inset 0 0 40px 10px rgba(255, 20, 147, 0.5); }
+					}
+					@keyframes idmuErrorShake {
+						0%, 100% { transform: translateX(-50%); }
+						20%, 60% { transform: translateX(calc(-50% - 6px)); }
+						40%, 80% { transform: translateX(calc(-50% + 6px)); }
+					}
+					.idmu-error {
+						animation: idmuErrorShake 0.4s cubic-bezier(.36,.07,.19,.97) both !important;
+						background: rgba(40, 10, 10, 0.95) !important;
+						color: #ffa8a8 !important;
+						box-shadow: 0 10px 30px rgba(255, 40, 40, 0.2), 0 0 0 1px rgba(255, 60, 60, 0.6) !important;
+					}
+					.idmu-error .idmu-dot {
+						background-color: #ff3c3c !important;
+						box-shadow: 0 0 12px #ff3c3c, 0 0 20px #ff3c3c !important;
+						animation: none !important;
 					}
 					#idmu-overlay {
 						position: fixed;
@@ -130,16 +156,19 @@ export async function runUnsendPlaywright(
 						bottom: 40px;
 						left: 50%;
 						transform: translateX(-50%);
-						background: #000;
+						background: rgba(10, 10, 10, 0.85);
+						backdrop-filter: blur(12px);
+						-webkit-backdrop-filter: blur(12px);
 						color: #fff;
 						padding: 12px 24px;
 						border-radius: 30px;
 						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 						font-size: 14px;
-						font-weight: 600;
-						box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 2px rgba(255, 20, 147, 0.5);
+						font-weight: 500;
+						letter-spacing: 0.3px;
+						box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255, 20, 147, 0.4);
 						z-index: 2147483647;
-						transition: all 0.3s ease;
+						transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 						pointer-events: none;
 						text-align: center;
 						min-width: 300px;
@@ -171,17 +200,103 @@ export async function runUnsendPlaywright(
 				island.id = "idmu-island";
 				island.innerHTML = `<div class="idmu-dot"></div><span id="idmu-island-text">IDMU: Initializing...</span>`;
 				document.body.appendChild(island);
+				let errorTimeout: ReturnType<typeof setTimeout>;
+				const blockUserInteraction = (e: Event) => {
+					if (e.isTrusted) {
+						e.stopPropagation();
+						e.preventDefault();
+
+						if (
+							e.type === "click" ||
+							e.type === "mousedown" ||
+							e.type === "pointerdown" ||
+							e.type === "keydown"
+						) {
+							const islandTextEl = island.querySelector("#idmu-island-text");
+							if (islandTextEl) {
+								if (!island.classList.contains("idmu-error")) {
+									island.dataset.originalText = islandTextEl.textContent || "";
+								}
+								islandTextEl.textContent = "Manual override blocked";
+							}
+
+							island.classList.add("idmu-error");
+
+							clearTimeout(errorTimeout);
+							errorTimeout = setTimeout(() => {
+								island.classList.remove("idmu-error");
+								if (island.dataset.originalText && islandTextEl) {
+									islandTextEl.textContent = island.dataset.originalText;
+								}
+							}, 2500);
+						}
+					}
+				};
+
+				(window as any).triggerTabError = () => {
+					const islandTextEl = island.querySelector("#idmu-island-text");
+					if (islandTextEl) {
+						if (!island.classList.contains("idmu-error")) {
+							island.dataset.originalText = islandTextEl.textContent || "";
+						}
+						islandTextEl.textContent = "New tabs are disabled";
+					}
+
+					island.classList.add("idmu-error");
+
+					clearTimeout(errorTimeout);
+					errorTimeout = setTimeout(() => {
+						island.classList.remove("idmu-error");
+						if (island.dataset.originalText && islandTextEl) {
+							islandTextEl.textContent = island.dataset.originalText;
+						}
+					}, 2500);
+				};
+
+				// Intercept physical events in capture phase
+				const eventsToBlock = [
+					"click",
+					"mousedown",
+					"mouseup",
+					"keydown",
+					"keyup",
+					"keypress",
+					"wheel",
+					"contextmenu",
+					"mousemove",
+					"pointerdown",
+				];
+				eventsToBlock.forEach((ev) => {
+					window.addEventListener(ev, blockUserInteraction, true);
+				});
 			});
 		});
 
 		await context.addInitScript(scriptBody);
 		await context.addCookies(cookies);
 
-		const page = await context.newPage();
+		// Block user from creating new tabs manually
+		context.on("page", async (newPage: any) => {
+			if (context.pages().length > 1) {
+				await newPage.close();
+				const mainPage = context.pages()[0];
+				if (mainPage) {
+					await mainPage
+						.evaluate(() => {
+							if (typeof (window as any).triggerTabError === "function") {
+								(window as any).triggerTabError();
+							}
+						})
+						.catch(() => {});
+				}
+			}
+		});
+
+		const page = context.pages()[0] || (await context.newPage());
 
 		if (config.onProgress) {
 			await page.exposeFunction("onIDMUStatus", (text: string) => {
-				config.onProgress!(text);
+				config.onProgress?.(text);
 			});
 			// Hook the exposeFunction into the page to also update the island
 			await page.addInitScript(() => {
@@ -242,54 +357,25 @@ export async function runUnsendPlaywright(
 		if (config.onProgress)
 			config.onProgress("✅  Unsending started! Monitoring progress...");
 
-		let runNumber = 0;
-		let consecutiveZeroRuns = 0;
-
-		while (consecutiveZeroRuns < 2) {
-			runNumber++;
-			if (config.onProgress)
-				config.onProgress(
-					`\n─── Run #${runNumber} | Total so far: ${totalUnsent} ───────────────────`,
-				);
-
-			// We let IDMU run headlessly in the page
-			// The start() method returns the number of unsent messages when it finishes or aborts
-			const engineConfig = {
-				delayMs: config.delayMs,
-				maxFailures: config.maxFailures,
-				topFirst: config.topFirst,
-			};
-			const runUnsent = await page.evaluate(async (cfg: any) => {
-				if (window.idmuEngine) {
-					return await window.idmuEngine.start(cfg);
-				}
-				return 0;
-			}, engineConfig);
-
-			totalUnsent += runUnsent;
-			if (config.onProgress)
-				config.onProgress(
-					`✅  Run #${runNumber} complete: ${runUnsent} unsent | ${totalUnsent} total`,
-				);
-
-			if (runUnsent === 0) {
-				consecutiveZeroRuns++;
-				if (config.onProgress)
-					config.onProgress(
-						`ℹ️  Zero unsent this run (${consecutiveZeroRuns}/2 consecutive zeros)`,
-					);
-			} else {
-				consecutiveZeroRuns = 0;
+		const engineConfig = {
+			delayMs: config.delayMs,
+			maxFailures: config.maxFailures,
+			topFirst: config.topFirst,
+		};
+		const runUnsent = await page.evaluate(async (cfg: any) => {
+			if (window.idmuEngine) {
+				return await window.idmuEngine.start(cfg);
 			}
+			return 0;
+		}, engineConfig);
 
-			await page.waitForTimeout(3000);
-		}
+		totalUnsent += runUnsent;
 
 		if (config.onProgress)
 			config.onProgress(`🎉  ALL DONE! Total messages unsent: ${totalUnsent}`);
 		await page.waitForTimeout(1000);
 	} finally {
-		await browser.close();
+		await context.close();
 	}
 
 	return totalUnsent;

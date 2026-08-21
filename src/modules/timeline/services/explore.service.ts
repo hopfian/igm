@@ -12,7 +12,10 @@ export class Explore {
 	}
 
 	public async getExploreFeed(): Promise<TimelineItem[]> {
-		const response = await this.client.apiCall("discover/web/explore_grid/", "GET");
+		const response = await this.client.apiCall(
+			"discover/web/explore_grid/",
+			"GET",
+		);
 		const sections = response.sectional_items || [];
 
 		const parsed: TimelineItem[] = [];

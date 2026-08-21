@@ -1,28 +1,20 @@
-import type { IDMU } from "./IDMU";
 import { UnsendStrategy } from "./UnsendStrategy";
 
 export class DefaultStrategy extends UnsendStrategy {
 	private _allPagesLoaded: boolean = false;
 	private _unsentCount: number = 0;
-	private _pagesLoadedCount: number = 0;
 	private _totalPagesLoaded: number = 0;
 	private _running: boolean = false;
 	private _abortController: AbortController | null = null;
 	private _lastUnsendDate: Date | null = null;
 	private _consecutiveFailures: number = 0;
-	private _MAX_PAGES_PER_RUN: number = 20;
 	private _maxConsecutiveFailures: number = 5;
 	private _minDelayMs: number = 400;
 	private _topFirst: boolean = false;
 
-	constructor(idmu: IDMU) {
-		super(idmu);
-	}
-
 	setConfig(config: any) {
 		if (config?.maxFailures) this._maxConsecutiveFailures = config.maxFailures;
 		if (config?.delayMs) this._minDelayMs = config.delayMs;
-		if (config?.maxPagesPerRun) this._MAX_PAGES_PER_RUN = config.maxPagesPerRun;
 		if (config?.topFirst !== undefined) this._topFirst = config.topFirst;
 	}
 
@@ -45,7 +37,6 @@ export class DefaultStrategy extends UnsendStrategy {
 		this._allPagesLoaded = false;
 		this._unsentCount = 0;
 		this._lastUnsendDate = null;
-		this._pagesLoadedCount = 0;
 		this._totalPagesLoaded = 0;
 		this._consecutiveFailures = 0;
 		this.idmu.setStatusText("Ready");
@@ -57,7 +48,6 @@ export class DefaultStrategy extends UnsendStrategy {
 
 	async run(): Promise<void> {
 		this._unsentCount = 0;
-		this._pagesLoadedCount = 0;
 		this._totalPagesLoaded = 0;
 		this._consecutiveFailures = 0;
 		this._running = true;
@@ -71,10 +61,33 @@ export class DefaultStrategy extends UnsendStrategy {
 		this.idmu.loadUIPI();
 
 		try {
-			if (this._allPagesLoaded) {
-				await this.unsendNextMessage();
+			if (this._topFirst) {
+				// 1. Load all pages to the absolute top first
+				while (!this._allPagesLoaded && !this._abortController.signal.aborted) {
+					const moreToLoad = await this.loadNextPage();
+					if (!moreToLoad) {
+						this._allPagesLoaded = true;
+						if (this.idmu.uipi?.ui) this.idmu.uipi.ui.lastScrollTop = null;
+					}
+				}
+				// 2. Unsend from top to bottom
+				while (!this._abortController.signal.aborted) {
+					const didUnsend = await this.unsendNextMessage();
+					if (!didUnsend) break;
+				}
 			} else {
-				await this.loadNextPage();
+				// Normal: Unsend newest to oldest, loading pages as we go up
+				while (!this._abortController.signal.aborted) {
+					const didUnsend = await this.unsendNextMessage();
+					if (!didUnsend) {
+						if (this._allPagesLoaded) break;
+
+						const moreToLoad = await this.loadNextPage();
+						if (!moreToLoad) {
+							this._allPagesLoaded = true;
+						}
+					}
+				}
 			}
 
 			if (this._unsentCount === 0 && !this._abortController.signal.aborted) {
@@ -85,14 +98,18 @@ export class DefaultStrategy extends UnsendStrategy {
 					await new Promise((resolve) => setTimeout(resolve, 2000));
 					if (this._abortController.signal.aborted) break;
 
-					this._allPagesLoaded = false;
-					this._consecutiveFailures = 0;
 					doc.querySelectorAll("[data-idmu-ignore]").forEach((el) => {
 						el.removeAttribute("data-idmu-ignore");
 					});
 					this.idmu.loadUIPI();
-					await this.loadNextPage();
-					if (this._unsentCount > 0 || this._abortController.signal.aborted)
+
+					// Re-check current page
+					const didUnsend = await this.unsendNextMessage();
+					if (
+						didUnsend ||
+						this._unsentCount > 0 ||
+						this._abortController.signal.aborted
+					)
 						break;
 				}
 			}
@@ -115,57 +132,42 @@ export class DefaultStrategy extends UnsendStrategy {
 		this._running = false;
 	}
 
-	private async loadNextPage(): Promise<void> {
-		if (!this._abortController || this._abortController.signal.aborted) return;
+	private async loadNextPage(): Promise<boolean> {
+		if (!this._abortController || this._abortController.signal.aborted)
+			return false;
 
-		if (!this._topFirst) {
-			this.idmu.setStatusText(`Monitoring current page for messages...`);
-			this._allPagesLoaded = true;
-			await this.unsendNextMessage();
-			return;
-		}
-
+		this._totalPagesLoaded++;
 		this.idmu.setStatusText(
-			`Loading next page... (Batch: ${this._pagesLoadedCount}/${this._MAX_PAGES_PER_RUN}) | Total Scrolled: ${this._totalPagesLoaded}`,
+			`Loading history... | Total Scrolled: ${this._totalPagesLoaded}`,
 		);
 		try {
-			const done = await this.idmu.fetchAndRenderThreadNextMessagePage(
+			const isAtTop = await this.idmu.fetchAndRenderThreadNextMessagePage(
 				this._abortController,
 			);
 			if (!this._abortController.signal.aborted) {
-				if (done) {
+				if (isAtTop) {
 					this.idmu.setStatusText(
 						`All pages loaded (${this._totalPagesLoaded} total). Unsending...`,
 					);
-					this._allPagesLoaded = true;
-					await this.unsendNextMessage();
-				} else {
-					this._pagesLoadedCount++;
-					this._totalPagesLoaded++;
-					if (this._pagesLoadedCount >= this._MAX_PAGES_PER_RUN) {
-						this.idmu.setStatusText(
-							`Batch limit reached (${this._totalPagesLoaded} total scrolled). Unsending...`,
-						);
-						this._allPagesLoaded = false;
-						await this.unsendNextMessage();
-					} else {
-						await this.loadNextPage();
-					}
+					return false; // No more to load
 				}
+				return true; // More to load
 			}
 		} catch (ex) {
 			console.error(ex);
 		}
+		return false;
 	}
 
-	private async unsendNextMessage(): Promise<void> {
-		if (!this._abortController || this._abortController.signal.aborted) return;
+	private async unsendNextMessage(): Promise<boolean> {
+		if (!this._abortController || this._abortController.signal.aborted)
+			return false;
 
 		if (this._consecutiveFailures >= this._maxConsecutiveFailures) {
 			this.idmu.setStatusText(
 				`Stopped: ${this._consecutiveFailures} consecutive failures. ${this._unsentCount} message(s) unsent.`,
 			);
-			return;
+			return false;
 		}
 
 		let canScroll = true;
@@ -177,6 +179,7 @@ export class DefaultStrategy extends UnsendStrategy {
 			);
 			const uipiMessage = await this.idmu.getNextUIPIMessage(
 				this._abortController,
+				this._topFirst,
 			);
 			canScroll = uipiMessage !== false;
 
@@ -199,7 +202,7 @@ export class DefaultStrategy extends UnsendStrategy {
 					}
 				}
 
-				if (this._abortController.signal.aborted) return;
+				if (this._abortController.signal.aborted) return false;
 
 				msgElement = uipiMessage.uiMessage.root;
 				const unsent = await uipiMessage.unsend(this._abortController);
@@ -228,15 +231,22 @@ export class DefaultStrategy extends UnsendStrategy {
 						this._lastUnsendDate = new Date();
 						this._unsentCount++;
 						this._consecutiveFailures = 0;
-						if (this.idmu.uipi && this.idmu.uipi.ui) {
+						if (this.idmu.uipi?.ui) {
 							// Rewind slightly to ensure we don't miss adjacent messages
 							// after the DOM shifts due to removal.
 							const ui = this.idmu.uipi.ui;
 							if (ui.lastScrollTop !== null) {
-								if (ui.lastScrollTop <= 0) {
+								if (this._topFirst) {
+									// Moving top to bottom (oldest to newest): when DOM shifts,
+									// messages shift up. We stay in place or move slightly up.
 									ui.lastScrollTop = Math.min(0, ui.lastScrollTop + 800);
 								} else {
-									ui.lastScrollTop = Math.max(0, ui.lastScrollTop - 800);
+									// Moving bottom to top: rewind slightly.
+									if (ui.lastScrollTop <= 0) {
+										ui.lastScrollTop = Math.min(0, ui.lastScrollTop + 800);
+									} else {
+										ui.lastScrollTop = Math.max(0, ui.lastScrollTop - 800);
+									}
 								}
 							}
 						}
@@ -268,15 +278,12 @@ export class DefaultStrategy extends UnsendStrategy {
 				`Workflow failed (${this._consecutiveFailures}/${this._maxConsecutiveFailures}), retrying in ${(backoffMs / 1000).toFixed(0)}s... (${this._unsentCount} unsent)`,
 			);
 			await new Promise((resolve) => setTimeout(resolve, backoffMs));
-		} finally {
-			if (this._abortController && !this._abortController.signal.aborted) {
-				if (canScroll) {
-					await this.unsendNextMessage();
-				} else if (!this._allPagesLoaded) {
-					this._pagesLoadedCount = 0;
-					await this.loadNextPage();
-				}
-			}
 		}
+
+		if (canScroll && !this._abortController.signal.aborted) {
+			return true;
+		}
+
+		return false;
 	}
 }

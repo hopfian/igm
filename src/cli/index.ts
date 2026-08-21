@@ -6,10 +6,19 @@ import { loadConfig } from "../core/config/config-manager";
 import { IGClient } from "../core/http/ig-client";
 import { clearActiveSpinner } from "../shared/ui/spinner";
 import { Theme } from "../shared/ui/theme";
-import { auth, dashboard, discover, dm, engage, identity, media, read } from "./commands";
+import {
+	auth,
+	dashboard,
+	discover,
+	dm,
+	engage,
+	identity,
+	media,
+	read,
+} from "./commands";
 
 async function main() {
-	const config = loadConfig();
+	const _config = loadConfig();
 
 	// Suppress header for export modes and standard yargs flags
 	const suppressHeader = process.argv.some(

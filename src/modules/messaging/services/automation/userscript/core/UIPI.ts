@@ -21,8 +21,9 @@ export class UIPI {
 
 	getNextUIPIMessage(
 		abortController: AbortController,
+		topFirst: boolean = false,
 	): Promise<UIPIMessage | false> {
-		return this.ui.getNextUIPIMessage(abortController);
+		return this.ui.getNextUIPIMessage(abortController, topFirst);
 	}
 
 	get ui(): DefaultUI {

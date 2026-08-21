@@ -49,7 +49,7 @@ export function main(window: Window) {
 			const strategy = (window as any)._activeStrategy as
 				| DefaultStrategy
 				| undefined;
-			if (strategy && strategy.isRunning()) {
+			if (strategy?.isRunning()) {
 				strategy.stop();
 			}
 		},

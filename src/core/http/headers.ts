@@ -9,7 +9,7 @@ export async function fetchRolloutHash(): Promise<{
 	asbdId: string;
 } | null> {
 	try {
-		const https = await import("https");
+		const https = await import("node:https");
 		return new Promise((resolve) => {
 			const req = https.get(
 				"https://www.instagram.com/",

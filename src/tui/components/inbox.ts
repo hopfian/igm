@@ -31,13 +31,15 @@ export async function renderInbox(
 
 		const items = threads.map((thread: any) => {
 			const users = thread.users.join(", ");
-			const preview = thread.last_message ? thread.last_message.replace(/\n/g, " ").substring(0, 30) : "";
+			const preview = thread.last_message
+				? thread.last_message.replace(/\n/g, " ").substring(0, 30)
+				: "";
 			return `💬 ${thread.thread_title || users} - ${preview}...`;
 		});
 
 		list.setItems(items);
 
-		list.on("select", async (item: any, index: number) => {
+		list.on("select", async (_item: any, index: number) => {
 			const thread = threads[index];
 			if (!thread) return;
 
@@ -61,16 +63,23 @@ export async function renderInbox(
 
 			try {
 				const details = await dmService.getThread(thread.thread_id);
-				const formatted = details.map((m: any) => {
-					const date = new Date(Number(m.timestamp) / 1000).toLocaleString();
-					return `[${date}] User ${m.user_id}: ${m.text}`;
-				}).reverse().join("\n");
-				
-				overlay.setContent(`--- ${thread.thread_title || thread.users.join(", ")} ---\n\n${formatted}\n\n[Press Esc to close]`);
+				const formatted = details
+					.map((m: any) => {
+						const date = new Date(Number(m.timestamp) / 1000).toLocaleString();
+						return `[${date}] User ${m.user_id}: ${m.text}`;
+					})
+					.reverse()
+					.join("\n");
+
+				overlay.setContent(
+					`--- ${thread.thread_title || thread.users.join(", ")} ---\n\n${formatted}\n\n[Press Esc to close]`,
+				);
 			} catch (e: any) {
-				overlay.setContent(`Failed to load thread: ${e.message}\n\n[Press Esc to close]`);
+				overlay.setContent(
+					`Failed to load thread: ${e.message}\n\n[Press Esc to close]`,
+				);
 			}
-			
+
 			screen.render();
 
 			overlay.key(["escape", "q", "enter"], () => {
@@ -79,7 +88,6 @@ export async function renderInbox(
 				screen.render();
 			});
 		});
-
 	} catch (e: any) {
 		list.setItems([`Error loading inbox: ${e.message}`]);
 	}

@@ -104,7 +104,7 @@ export const registerEngageCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`@${item.username}`);
+				s?.succeed(`@${item.username}`);
 				console.log(item);
 			},
 		);

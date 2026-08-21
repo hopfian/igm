@@ -11,7 +11,7 @@ export type IGMConfig = {
 	cardWidth: number;
 	retryAttempts: number;
 	retryDelayMs: number;
-}
+};
 
 const CONFIG_DEFAULTS: IGMConfig = {
 	cookieFile: "cookies.txt",
@@ -37,7 +37,10 @@ export function loadConfig(): IGMConfig {
 	return {
 		cookieFile: config.get("cookieFile") as unknown as string,
 		activeProfile: config.get("activeProfile") as unknown as string,
-		profiles: (config.get("profiles") || {}) as unknown as Record<string, string>,
+		profiles: (config.get("profiles") || {}) as unknown as Record<
+			string,
+			string
+		>,
 		defaultCount: config.get("defaultCount") as unknown as number,
 		downloadDir: config.get("downloadDir") as unknown as string,
 		cardWidth: config.get("cardWidth") as unknown as number,
@@ -52,10 +55,10 @@ export function loadConfig(): IGMConfig {
 export function saveConfig(updates: Partial<IGMConfig>): IGMConfig {
 	const current = loadConfig();
 	const merged = { ...current, ...updates };
-	
+
 	for (const [key, value] of Object.entries(merged)) {
 		config.set(key, value);
 	}
-	
+
 	return merged;
 }

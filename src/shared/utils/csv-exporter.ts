@@ -1,8 +1,8 @@
 // ⚠️  DOC-SYNC: Any changes to this file MUST be reflected in docs/ui.md (§ output.ts — Data Export Engine)
 //     If export formats, CSV column schemas, or the OutputOptions interface change, update the docs.
 
+import * as fs from "node:fs";
 import chalk from "chalk";
-import * as fs from "fs";
 
 export interface OutputOptions {
 	json?: boolean;
@@ -21,7 +21,7 @@ export function handleDataExport(items: any[], opts: OutputOptions): boolean {
 	if (!opts.json && !opts.csv && !opts.pipe && !opts.out) return false;
 
 	if (opts.pipe) {
-		for (const item of items) process.stdout.write(JSON.stringify(item) + "\n");
+		for (const item of items) process.stdout.write(`${JSON.stringify(item)}\n`);
 		return true;
 	}
 
@@ -49,7 +49,7 @@ export function handleUserExport(users: any[], opts: OutputOptions): boolean {
 	if (!opts.json && !opts.csv && !opts.pipe && !opts.out) return false;
 
 	if (opts.pipe) {
-		for (const u of users) process.stdout.write(JSON.stringify(u) + "\n");
+		for (const u of users) process.stdout.write(`${JSON.stringify(u)}\n`);
 		return true;
 	}
 
@@ -80,7 +80,7 @@ export function handleCommentExport(
 	if (!opts.json && !opts.csv && !opts.pipe && !opts.out) return false;
 
 	if (opts.pipe) {
-		for (const c of comments) process.stdout.write(JSON.stringify(c) + "\n");
+		for (const c of comments) process.stdout.write(`${JSON.stringify(c)}\n`);
 		return true;
 	}
 
@@ -115,7 +115,7 @@ function writeToFile(
 	if (ext === "csv") {
 		content = csvFn(data);
 	} else if (ext === "jsonl") {
-		content = data.map((d) => JSON.stringify(d)).join("\n") + "\n";
+		content = `${data.map((d) => JSON.stringify(d)).join("\n")}\n`;
 	} else {
 		content = JSON.stringify(data, null, 2);
 	}
@@ -160,7 +160,7 @@ function toPostCSV(items: any[]): string {
 		"url",
 	];
 
-	let csv = headers.join(",") + "\n";
+	let csv = `${headers.join(",")}\n`;
 	for (const item of items) {
 		const takenAt = item.taken_at
 			? new Date(item.taken_at * 1000).toISOString()
@@ -182,7 +182,7 @@ function toPostCSV(items: any[]): string {
 			escapeCsv((item.media_urls || []).join(" ")),
 			item.url || `https://www.instagram.com/p/${item.code}/`,
 		];
-		csv += row.join(",") + "\n";
+		csv += `${row.join(",")}\n`;
 	}
 	return csv;
 }
@@ -202,7 +202,7 @@ function toUserCSV(users: any[]): string {
 		"external_url",
 	];
 
-	let csv = headers.join(",") + "\n";
+	let csv = `${headers.join(",")}\n`;
 	for (const u of users) {
 		const row = [
 			u.pk || u.id || "",
@@ -216,7 +216,7 @@ function toUserCSV(users: any[]): string {
 			escapeCsv(u.biography),
 			u.external_url || "",
 		];
-		csv += row.join(",") + "\n";
+		csv += `${row.join(",")}\n`;
 	}
 	return csv;
 }
@@ -232,7 +232,7 @@ function toCommentCSV(comments: any[]): string {
 		"created_at",
 	];
 
-	let csv = headers.join(",") + "\n";
+	let csv = `${headers.join(",")}\n`;
 	for (const c of comments) {
 		const createdAt = c.created_at
 			? new Date(c.created_at * 1000).toISOString()
@@ -245,7 +245,7 @@ function toCommentCSV(comments: any[]): string {
 			c.reply_count ?? 0,
 			createdAt,
 		];
-		csv += row.join(",") + "\n";
+		csv += `${row.join(",")}\n`;
 	}
 	return csv;
 }
@@ -267,7 +267,7 @@ function printPreview(items: any[]) {
 			" ",
 		);
 		const trunc =
-			snippet.length > 50 ? snippet.substring(0, 47) + "..." : snippet;
+			snippet.length > 50 ? `${snippet.substring(0, 47)}...` : snippet;
 		console.log(
 			`  ${chalk.dim("│")} ${chalk.cyan(label)} ${chalk.dim("·")} "${chalk.white(trunc)}"`,
 		);

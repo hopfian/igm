@@ -1,12 +1,9 @@
 // ⚠️  DOC-SYNC: Any changes to this file MUST be reflected in docs/features.md (§ users/profile.ts)
 //     If methods, API endpoints, or return types change, update the method table in the docs.
 import type { IGClient } from "../../../core/http/ig-client";
-import { parseMediaNode } from "../../../modules/timeline/utils/media-extractor";
 import type { TimelineItem } from "../../../modules/timeline/models/timeline.model";
-import type {
-	FriendshipStatus,
-	ProfileInfo,
-} from "../models/user.model";
+import { parseMediaNode } from "../../../modules/timeline/utils/media-extractor";
+import type { FriendshipStatus, ProfileInfo } from "../models/user.model";
 
 export class Profile {
 	private client: IGClient;

@@ -2,22 +2,21 @@
 //     If commands, aliases, or options change, update the command table in the docs.
 import type { IGClient } from "../../core/http/ig-client";
 import { Notifications } from "../../modules/identity/services/notifications.service";
-import { Search } from "../../modules/identity/services/search.service";
 import { Profile } from "../../modules/identity/services/profile.service";
+import { Search } from "../../modules/identity/services/search.service";
 import { Stories } from "../../modules/identity/services/stories.service";
-
+import { renderSearchResults } from "../../modules/identity/ui/identity.renderer";
+import {
+	renderNotifications,
+	renderSavedPosts,
+	renderStories,
+	renderStoryTray,
+} from "../../modules/identity/ui/notifications.renderer";
 import { spin } from "../../shared/ui/spinner";
 import {
 	handleDataExport,
 	handleUserExport,
 } from "../../shared/utils/csv-exporter";
-import { renderSearchResults } from "../../modules/identity/ui/identity.renderer";
-import {
-	renderNotifications,
-	renderStoryTray,
-	renderStories,
-	renderSavedPosts,
-} from "../../modules/identity/ui/notifications.renderer";
 
 /**
  * Discovery commands: search, notifications, stories, saved posts.
@@ -56,7 +55,7 @@ export const registerDiscoverCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${users.length} users found`);
+				s?.succeed(`${users.length} users found`);
 				renderSearchResults(sliced);
 			},
 		)
@@ -90,7 +89,7 @@ export const registerDiscoverCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${all.length} notifications loaded`);
+				s?.succeed(`${all.length} notifications loaded`);
 				const newSlice = data.new_stories.slice(0, argv.c);
 				const oldSlice = data.old_stories.slice(
 					0,
@@ -129,7 +128,7 @@ export const registerDiscoverCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${tray.length} story trays loaded`);
+				s?.succeed(`${tray.length} story trays loaded`);
 				renderStoryTray(sliced);
 			},
 		)
@@ -160,7 +159,7 @@ export const registerDiscoverCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${items.length} stories loaded`);
+				s?.succeed(`${items.length} stories loaded`);
 				renderStories(items);
 			},
 		)
@@ -193,7 +192,7 @@ export const registerDiscoverCommands = (yargs: any, client: IGClient) => {
 					return;
 				}
 
-				s!.succeed(`${items.length} saved posts loaded`);
+				s?.succeed(`${items.length} saved posts loaded`);
 				renderSavedPosts(items.slice(0, argv.c));
 			},
 		);

@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import pino from "pino";
 import { clearActiveSpinner } from "../../shared/ui/spinner.js";
 

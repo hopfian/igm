@@ -30,15 +30,18 @@ export async function renderTimeline(
 		const feed = await timelineService.getFeed();
 
 		const items = feed.map((post: any) => {
-			const type = post.media_type === 1 ? "🖼️ " : post.media_type === 2 ? "🎬 " : "📸 ";
+			const type =
+				post.media_type === 1 ? "🖼️ " : post.media_type === 2 ? "🎬 " : "📸 ";
 			const author = post.username;
-			const caption = post.caption ? post.caption.replace(/\n/g, " ").substring(0, 40) : "No caption";
+			const caption = post.caption
+				? post.caption.replace(/\n/g, " ").substring(0, 40)
+				: "No caption";
 			return `${type} @${author} - ${caption}... (♡ ${post.like_count})`;
 		});
 
 		list.setItems(items);
 
-		list.on("select", (item: any, index: number) => {
+		list.on("select", (_item: any, index: number) => {
 			const post = feed[index];
 			if (!post) return;
 
@@ -66,7 +69,6 @@ export async function renderTimeline(
 				screen.render();
 			});
 		});
-
 	} catch (e: any) {
 		list.setItems([`Error loading timeline: ${e.message}`]);
 	}

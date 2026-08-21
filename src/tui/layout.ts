@@ -3,7 +3,10 @@ import type { IGClient } from "../core/http/ig-client";
 import { renderInbox } from "./components/inbox";
 import { renderTimeline } from "./components/timeline";
 
-export async function setupLayout(screen: blessed.Widgets.Screen, client: IGClient) {
+export async function setupLayout(
+	screen: blessed.Widgets.Screen,
+	client: IGClient,
+) {
 	// Status Bar
 	const statusBar = blessed.box({
 		top: 0,
@@ -34,8 +37,8 @@ export async function setupLayout(screen: blessed.Widgets.Screen, client: IGClie
 			focus: {
 				border: {
 					fg: "cyan",
-				}
-			}
+				},
+			},
 		},
 		label: " Timeline ",
 	});
@@ -56,8 +59,8 @@ export async function setupLayout(screen: blessed.Widgets.Screen, client: IGClie
 			focus: {
 				border: {
 					fg: "cyan",
-				}
-			}
+				},
+			},
 		},
 		label: " Inbox ",
 	});

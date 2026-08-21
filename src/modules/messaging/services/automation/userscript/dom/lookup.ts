@@ -51,8 +51,13 @@ export function getMessagesInnerContainer(
 	return best as HTMLDivElement;
 }
 
-export function isSentByCurrentUser(element: Element, window: Window): boolean {
-	const content = element.querySelector("[role=none]") || element.querySelector("[role=presentation]");
+export function isSentByCurrentUser(
+	element: Element,
+	_window: Window,
+): boolean {
+	const content =
+		element.querySelector("[role=none]") ||
+		element.querySelector("[role=presentation]");
 	if (!content) return false;
 	const elementRect = element.getBoundingClientRect();
 	const contentRect = content.getBoundingClientRect();
@@ -69,21 +74,21 @@ export function getFirstVisibleMessage(
 	const innerContainer = getMessagesInnerContainer(root);
 	if (!innerContainer) return undefined;
 
-	const elements = Array.from(innerContainer.children).filter((d) => {
-		if (d.hasAttribute("data-idmu-ignore")) return false;
-		if (d.hasAttribute("data-idmu-unsent")) return false;
+	const children = innerContainer.children;
+	for (let i = children.length - 1; i >= 0; i--) {
+		if (abortController.signal.aborted) break;
+
+		const element = children[i] as HTMLElement;
+
+		if (element.hasAttribute("data-idmu-ignore")) continue;
+		if (element.hasAttribute("data-idmu-unsent")) continue;
 
 		const hasMessageContent =
-			d.querySelector("[role=none]") || d.querySelector("[role=presentation]");
-		if (!hasMessageContent) return false;
+			element.querySelector("[role=none]") ||
+			element.querySelector("[role=presentation]");
+		if (!hasMessageContent) continue;
 
-		return isSentByCurrentUser(d, window);
-	}) as HTMLElement[];
-
-	elements.reverse();
-
-	for (const element of elements) {
-		if (abortController.signal.aborted) break;
+		if (!isSentByCurrentUser(element, window)) continue;
 
 		// (element as any).checkVisibility is a newer DOM API, provide a fallback just in case
 		const checkVis = (element as any).checkVisibility;
@@ -162,14 +167,14 @@ export async function loadMoreMessages(
 	if (isAtTop()) {
 		let loader = findVisibleLoader();
 		if (!loader && root.scrollHeight <= beforeHeight) {
-			// Fast micro-poll for up to 500ms to instantly detect loader injection or height expansion
-			for (let i = 0; i < 25; i++) {
+			// Fast micro-poll for up to 2000ms to instantly detect loader injection or height expansion
+			for (let i = 0; i < 100; i++) {
 				await new Promise((resolve) => setTimeout(resolve, 20));
 				loader = findVisibleLoader();
 				if (loader || root.scrollHeight > beforeHeight) break;
 			}
 		}
-		
+
 		if (loader) {
 			await waitForElement(
 				root,

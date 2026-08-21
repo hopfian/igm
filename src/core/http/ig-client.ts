@@ -3,8 +3,12 @@
 
 import chalk from "chalk";
 import { clearActiveSpinner } from "../../shared/ui/spinner";
-import { extractCsrfToken, loadCookies, mergeCookies } from "../auth/cookie-parser";
-import { type IGMConfig, loadConfig, saveConfig } from "../config/config-manager";
+import {
+	extractCsrfToken,
+	loadCookies,
+	mergeCookies,
+} from "../auth/cookie-parser";
+import { type IGMConfig, loadConfig } from "../config/config-manager";
 import { humanDelay } from "../timing/human-delay";
 import { fetchRolloutHash } from "./headers";
 import { executeRequest } from "./request";
@@ -31,7 +35,7 @@ export class IGClient {
 
 	constructor(profileOverride?: string) {
 		this.config = loadConfig();
-		
+
 		const profileName = profileOverride || this.config.activeProfile;
 		let cookieSource = this.config.cookieFile;
 		if (profileName !== "local" && this.config.profiles[profileName]) {
@@ -40,10 +44,10 @@ export class IGClient {
 
 		try {
 			this.cookieString = loadCookies(cookieSource);
-		} catch (e) {
+		} catch (_e) {
 			this.cookieString = "";
 		}
-		
+
 		this.csrfToken = extractCsrfToken(this.cookieString);
 		this.retryAttempts = this.config.retryAttempts;
 		this.retryDelayMs = this.config.retryDelayMs;
@@ -79,7 +83,7 @@ export class IGClient {
 	 * Includes Sec-CH-UA Client Hints, Sec-Fetch-* metadata, and dynamic rollout values.
 	 */
 	private buildHeaders(
-		method: string,
+		_method: string,
 		isPost: boolean,
 	): Record<string, string> {
 		const headers: Record<string, string> = {

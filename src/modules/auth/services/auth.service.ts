@@ -1,4 +1,4 @@
-import { IGClient } from "../../../core/http/ig-client";
+import type { IGClient } from "../../../core/http/ig-client";
 
 export class AuthService {
 	private client: IGClient;
@@ -21,12 +21,12 @@ export class AuthService {
 	public async login(username: string, password: string): Promise<any> {
 		const timestamp = Math.floor(Date.now() / 1000).toString();
 		const encPassword = `#PWD_INSTAGRAM_BROWSER:0:${timestamp}:${password}`;
-		
+
 		const data = {
 			username,
 			enc_password: encPassword,
 			queryParams: "{}",
-			optIntoOneTap: "false"
+			optIntoOneTap: "false",
 		};
 
 		return this.client.apiCall("web/accounts/login/ajax/", "POST", data);
@@ -35,13 +35,21 @@ export class AuthService {
 	/**
 	 * Submits the 2FA verification code.
 	 */
-	public async submit2FA(username: string, identifier: string, code: string): Promise<any> {
+	public async submit2FA(
+		username: string,
+		identifier: string,
+		code: string,
+	): Promise<any> {
 		const data = {
 			username,
 			identifier,
 			verificationCode: code,
 		};
 
-		return this.client.apiCall("web/accounts/login/ajax/two_factor/", "POST", data);
+		return this.client.apiCall(
+			"web/accounts/login/ajax/two_factor/",
+			"POST",
+			data,
+		);
 	}
 }

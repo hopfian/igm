@@ -13,9 +13,10 @@ export class IDMU {
 
 	getNextUIPIMessage(
 		abortController: AbortController,
+		topFirst: boolean = false,
 	): Promise<UIPIMessage | false> {
 		if (!this.uipi) throw new Error("UIPI not loaded");
-		return this.uipi.getNextUIPIMessage(abortController);
+		return this.uipi.getNextUIPIMessage(abortController, topFirst);
 	}
 
 	setStatusText(text: string) {

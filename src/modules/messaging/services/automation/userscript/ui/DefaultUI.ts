@@ -29,6 +29,7 @@ export class DefaultUI extends UIComponent {
 
 	async getNextUIPIMessage(
 		abortController: AbortController,
+		topFirst: boolean = false,
 	): Promise<UIPIMessage | false> {
 		const uiMessagesWrapperRoot = this.identifier.uiMessagesWrapper
 			.root as HTMLElement;
@@ -54,18 +55,32 @@ export class DefaultUI extends UIComponent {
 
 		if (isReversed) {
 			const minScroll = -(
-				uiMessagesWrapperRoot.scrollHeight -
-				uiMessagesWrapperRoot.clientHeight
+				uiMessagesWrapperRoot.scrollHeight - uiMessagesWrapperRoot.clientHeight
 			);
-			const startPos =
-				this.lastScrollTop !== null
-					? Math.max(this.lastScrollTop, minScroll)
-					: 0;
-
 			const totalRange = Math.abs(minScroll);
-			const step = totalRange < 500 ? 50 : 300;
+			const stepAmount = totalRange < 500 ? 50 : 300;
 
-			for (let i = startPos; i >= minScroll; i = i - step) {
+			let startPos: number;
+			let endPos: number;
+			let step: number;
+
+			if (topFirst) {
+				startPos =
+					this.lastScrollTop !== null
+						? Math.min(this.lastScrollTop, 0)
+						: minScroll;
+				endPos = 0;
+				step = stepAmount;
+			} else {
+				startPos =
+					this.lastScrollTop !== null
+						? Math.max(this.lastScrollTop, minScroll)
+						: 0;
+				endPos = minScroll;
+				step = -stepAmount;
+			}
+
+			for (let i = startPos; topFirst ? i <= endPos : i >= endPos; i += step) {
 				if (abortController.signal.aborted) {
 					return false;
 				}
@@ -89,16 +104,33 @@ export class DefaultUI extends UIComponent {
 			}
 		} else {
 			const maxScroll =
-				uiMessagesWrapperRoot.scrollHeight -
-				uiMessagesWrapperRoot.clientHeight;
-			const startScrollTop =
-				this.lastScrollTop !== null
-					? Math.min(this.lastScrollTop, maxScroll)
-					: maxScroll;
+				uiMessagesWrapperRoot.scrollHeight - uiMessagesWrapperRoot.clientHeight;
+			const totalRange = maxScroll;
+			const stepAmount = totalRange < 500 ? 50 : 300;
 
-			const step = maxScroll < 500 ? 50 : 300;
+			let startPos: number;
+			let endPos: number;
+			let step: number;
 
-			for (let i = Math.max(1, startScrollTop); i > 0; i = i - step) {
+			if (topFirst) {
+				startPos =
+					this.lastScrollTop !== null ? Math.max(this.lastScrollTop, 0) : 0;
+				endPos = maxScroll;
+				step = stepAmount;
+			} else {
+				startPos =
+					this.lastScrollTop !== null
+						? Math.min(this.lastScrollTop, maxScroll)
+						: maxScroll;
+				endPos = 0;
+				step = -stepAmount;
+			}
+
+			for (
+				let i = Math.max(1, startPos);
+				topFirst ? i <= endPos : i > 0;
+				i += step
+			) {
 				if (abortController.signal.aborted) {
 					return false;
 				}

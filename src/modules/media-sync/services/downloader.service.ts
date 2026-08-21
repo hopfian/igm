@@ -1,7 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
 import axios from "axios";
 import chalk from "chalk";
-import fs from "fs";
-import path from "path";
 import type { IGClient } from "../../../core/http/ig-client";
 import { extractMediaUrls } from "../../../modules/timeline/utils/media-extractor";
 import { spin } from "../../../shared/ui/spinner";
