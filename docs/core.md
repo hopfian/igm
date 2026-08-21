@@ -1,115 +1,50 @@
-# Core Engine
+# Core HTTP & Network Layer
 
-> Internal documentation for `src/core/`.
+The `src/core/` module is the foundation of `igm`. It manages authentication, network requests, rate limiting, and Instagram's bot defense evasion. The architecture relies on a 7-layer defense system implemented through a dynamic HTTP client.
 
----
+## Core Components
 
-## § auth.ts — Authentication
+### `auth.ts` — Cookie Management
+Parses Netscape HTTP Cookie File format (`cookies.txt`).
+- Reads the file line-by-line, filtering comments and blank lines.
+- Extracts cookie names and values.
+- Reconstructs a compliant `Cookie: ...` header string for injection into HTTP requests.
 
-Parses Netscape-format `cookies.txt` files into session cookie strings for Instagram API replay.
+### `client.ts` — The IGClient
+The `IGClient` class orchestrates all network communication. It implements a 7-Layer Defense Evasion mechanism to avoid bot detection:
+1. **Chrome TLS Impersonation**: Uses `got-scraping` (via `request.ts`) to match Chrome's TLS fingerprint and HTTP/2 SETTINGS frames.
+2. **Dynamic Headers**: Injects exact browser headers (e.g., `Sec-Fetch-Site: same-origin`, `X-Instagram-AJAX`).
+3. **App ID Verification**: Maintains the required `X-IG-App-ID`.
+4. **Dynamic Claims**: Captures the `x-ig-set-www-claim` header from responses and attaches it to subsequent requests.
+5. **Rollout Syncing**: Fetches `server_revision` and `ASBD_ID` dynamically from Instagram's homepage (via `headers.ts`).
+6. **Human Timing**: Implements log-normal delay timing between requests (via `timing.ts`).
+7. **Resilience**: Implements automatic backoff and jitter retries for rate limits (429) and server errors (500+).
 
-### Exports
+#### Error Handling
+- **401/403**: Aborts and prompts the user to re-export cookies.
+- **challenge_required**: Aborts and instructs the user to clear the challenge in the browser.
+- **429 (Rate Limited)**: Reads the `retry-after` header and suspends execution.
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `loadCookies` | `(file?: string) → string` | Reads cookie file, returns semicolon-joined cookie string |
-| `extractCsrfToken` | `(cookieString: string) → string` | Extracts the `csrftoken` value for X-CSRFToken header |
+### `config.ts` — Configuration
+Manages the application configuration via `.igmrc.json`. Falls back to the following defaults if the file is missing or malformed:
 
-### Cookie Format
+| Option | Default Value | Description |
+| :--- | :--- | :--- |
+| `cookieFile` | `'cookies.txt'` | Path to the Netscape cookie file. |
+| `defaultCount` | `10` | Default number of items to fetch (where applicable). |
+| `downloadDir` | `'./downloads'` | Output directory for media downloads. |
+| `cardWidth` | `76` | Terminal character width for UI rendering. |
+| `retryAttempts` | `3` | Maximum number of request retries. |
+| `retryDelayMs` | `1000` | Base delay for retry backoff. |
 
-Expects Netscape HTTP Cookie File format (tab-delimited):
-```
-.instagram.com	TRUE	/	TRUE	0	csrftoken	abc123...
-```
+### `headers.ts` — Rollout Sync
+Contains `fetchRolloutHash()`, which fetches the Instagram homepage to extract live rollout values (`server_revision` and `ASBD_ID`). These rotate with deployments; using stale values acts as a bot signal.
 
-Lines starting with `#` (except `#HttpOnly_`) are skipped.
+### `request.ts` — HTTP Engine
+Implements `executeRequest()`.
+- Dynamically imports `got-scraping` (ESM module) for advanced TLS impersonation.
+- Falls back to `axios` if `got-scraping` is unavailable.
+- Extracts and returns `data` alongside the `newClaim` header if present.
 
----
-
-## § client.ts — Hardened HTTP Client
-
-The `IGClient` class implements a **7-layer defense-in-depth** architecture to make requests indistinguishable from a real Chrome browser session.
-
-### Architecture: Anti-Detection Layers
-
-| Layer | Defense | Implementation |
-|-------|---------|----------------|
-| **L1: TLS** | Chrome TLS fingerprint | `got-scraping` with JA3/JA4 impersonation |
-| **L2: HTTP/2** | Chrome HTTP/2 SETTINGS | `got-scraping` auto-negotiates HTTP/2 |
-| **L3: Headers** | Full Chrome header suite | `Sec-CH-UA`, `Sec-Fetch-*`, dynamic rollout hash |
-| **L4: Session** | Dynamic claim capture | `X-IG-WWW-Claim` from `x-ig-set-www-claim` response header |
-| **L5: Timing** | Human-like delays | Log-normal distribution (Box-Muller), velocity monitoring |
-| **L6: Behavior** | N/A (human-driven) | Manual CLI, interactive pagination |
-| **L7: Trust** | Challenge detection | Graceful `challenge_required` handling |
-
-### Constructor
-
-```typescript
-new IGClient(cookieFile?: string)
-```
-
-Reads config from `.igmrc.json`, loads cookies, and lazy-loads `got-scraping` via `new Function('return import()')` to bypass tsc's CJS transformation.
-
-### Dynamic Rollout Refresh
-
-On the first API call, the client fetches `instagram.com` homepage to extract:
-- `server_revision` → `X-Instagram-AJAX` header
-- `ASBD_ID` → `X-ASBD-ID` header
-
-These rotate with Meta deployments. Stale values are a bot signal.
-
-### Request Flow
-
-```
-apiCall() → refreshRollout() → enforceHumanTiming() → buildHeaders() → executeRequest()
-                                      ↓                                       ↓
-                              log-normal delay                    got-scraping (primary)
-                              velocity check                     axios (fallback)
-```
-
-### Retry Behavior
-
-- **401/403**: Throws immediately (auth failure, no retry)
-- **429**: Reads `Retry-After` header, waits, then retries
-- **challenge_required**: Throws with user instructions to resolve in browser
-- **5xx**: Retries with exponential backoff + jitter (`retryDelayMs × attempt + random`)
-- **ECONNRESET/ETIMEDOUT**: Retries with backoff
-- Default: 3 attempts (configurable via `.igmrc.json`)
-
-### Human Timing Engine
-
-Uses Box-Muller transform for log-normal distribution:
-- Median delay: 800ms
-- Spread (σ): 0.6
-- Clamped: 200ms – 5000ms
-- Velocity warning: >40 requests/minute triggers 3-5s cooldown
-
-### POST Encoding
-
-POST data is serialized as `application/x-www-form-urlencoded` via `URLSearchParams`, matching Instagram's web client behavior.
-
----
-
-## § config.ts — Configuration
-
-Manages an optional `.igmrc.json` config file in the project root.
-
-### Interface
-
-```typescript
-interface IGMConfig {
-    cookieFile: string;       // Default: 'cookies.txt'
-    defaultCount: number;     // Default: 10
-    downloadDir: string;      // Default: './downloads'
-    cardWidth: number;        // Default: 76
-    retryAttempts: number;    // Default: 3
-    retryDelayMs: number;     // Default: 1000
-}
-```
-
-### Exports
-
-| Function | Description |
-|----------|-------------|
-| `loadConfig()` | Loads `.igmrc.json` with fallback to defaults |
-| `saveConfig(updates)` | Merges updates and writes to `.igmrc.json` |
+### `timing.ts` — Human Simulation
+Contains `humanDelay(median = 800, sigma = 0.6)`. Uses the Box-Muller transform to generate delays drawn from a log-normal distribution, clamping between 200ms and 5000ms. This simulates human "bursty" behavior—many short pauses mixed with occasional long ones.

@@ -1,55 +1,41 @@
-# Utilities
+# Shared Utilities
 
-> Internal documentation for `src/utils/`.
+The `src/utils/` module contains pure functions and helpers used across the core architecture, features, and presentation layer.
 
----
+## Media Extraction (`media.ts`)
 
-## § parsers.ts — Formatting & Parsing
+Handles the extraction of nested media node structures from raw API responses.
 
-### Time & Display
+| Method | Signature | Description |
+| :--- | :--- | :--- |
+| `extractMediaUrls` | `(media: any) => string[]` | Extracts raw underlying asset URLs from a media node. Handles `carousel_media` arrays, `video_versions` objects, and `image_versions2` nodes recursively. |
+| `parseMediaNode` | `(media: any) => TimelineItem \| null` | Transforms a raw `IGMediaNode` into a cleanly typed `TimelineItem`. Uses `extractMediaUrls` internally and dynamically reconstructs the `instagram.com/p/...` URL from the `code`. |
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `timeAgo(unixTs)` | `number → string` | Converts timestamp to relative string: `2h ago`, `3d ago`, `1w ago` |
-| `formatNumber(n)` | `number → string` | Smart abbreviation: `1,234` → `1.2K`, `1500000` → `1.5M` |
-| `mediaTypeLabel(type?)` | `number → string` | Maps IG type to emoji label: `1→🖼️ Photo`, `2→🎬 Video`, `8→📸 Carousel` |
-| `truncate(str, maxLen)` | `string → string` | Truncates with ellipsis: `"Hello World..." ` |
-| `termWidth()` | `→ number` | Returns terminal column width (fallback: 80) |
+## String Formatting & Parsing (`parsers.ts`)
 
-### Instagram-Specific
+Pure utility functions for text manipulation, URL handling, and humanization.
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `sanitizeInput(input)` | `string → string` | Extracts shortcode from URL or returns raw input |
-| `shortcodeToId(shortcode)` | `string → string` | Converts base64-ish shortcode to numeric media ID |
+| Method | Signature | Description |
+| :--- | :--- | :--- |
+| `timeAgo` | `(unixTs: number) => string` | Converts a Unix timestamp into relative strings (e.g., `5m ago`, `2h ago`). Falls back to `toLocaleDateString()` for older dates. |
+| `formatNumber` | `(n: number) => string` | Truncates large integers for UI display using suffixes (e.g., `1.2M`, `5.4K`). Comma-separates smaller numbers. |
+| `sanitizeInput` | `(input: string) => string` | Extracts the raw shortcode from a full URL, shortcode, or numeric ID string (e.g., parses out `p/xyz123`). |
+| `shortcodeToId` | `(shortcode: string) => string` | Translates an Instagram base64 shortcode into a 64-bit BigInt string using IG's specific alphabet `A-Za-z0-9-_`. |
+| `truncate` | `(str: string, maxLen: number) => string`| Hard truncates a string with a `...` suffix if it exceeds `maxLen`. |
+| `termWidth` | `() => number` | Helper to fetch `process.stdout.columns`, falling back to `80`. |
+| `mediaTypeLabel`| `(type?: number) => string` | Maps `IGMediaNode`'s `media_type` integer to a UI-friendly label (`1` ➔ Photo, `2` ➔ Video, `8` ➔ Carousel). |
 
----
+## Error Management (`errors.ts`)
 
-## § media.ts — Media Extraction
+Defines custom exception classes and centralized CLI error handling.
 
-Shared utilities to eliminate duplicated media parsing across all features.
+**`handleError(e: any): never`**
+The global error handler for command execution. When triggered, it:
+1. Calls `clearActiveSpinner()` to prevent terminal cursor corruption.
+2. Prints the fatal error message styled with `chalk.red('✗')`.
+3. Exits the process with status code `1`.
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `extractMediaUrls(media)` | `any → string[]` | Extracts all media URLs from a raw IG node (handles carousel, video, image) |
-| `parseMediaNode(media)` | `any → TimelineItem \| null` | Full parse: user, caption, stats, URLs, metadata → domain model |
-
-### Media Priority
-
-1. `carousel_media[]` → iterate each item
-2. `video_versions[0].url` (highest quality video)
-3. `image_versions2.candidates[0].url` (highest quality image)
-
----
-
-## § errors.ts — Error Classes
-
-Custom error hierarchy for domain-specific error handling.
-
-| Class | Description |
-|-------|-------------|
-| `AuthError` | Authentication/session failures (401, 403) |
-| `RateLimitError` | Instagram rate limiting (429) |
-| `ParseError` | Unexpected API response structure |
-
-All errors extend the native `Error` class with an `errorCode` property for programmatic handling.
+**Custom Exception Classes:**
+- `AuthError`: Thrown on `401`/`403` or when `cookies.txt` is missing.
+- `RateLimitError`: Thrown on `429` (includes `resetAt` parameter if a retry backoff timeout is provided).
+- `ParseError`: Thrown when response parsing fails or encounters unexpected schemas.
