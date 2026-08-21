@@ -56,7 +56,7 @@ export class Downloader {
 			try {
 				const s = spin(`downloading ${filename}...`);
 				await this.downloadFile(url, filepath);
-				s.done(`saved ${filepath}`);
+				s.succeed(`saved ${filepath}`);
 			} catch (error: any) {
 				console.error(chalk.red(`  ✗ Failed: ${filename} — ${error.message}`));
 			}
@@ -78,7 +78,7 @@ export class Downloader {
 		const username = media.user?.username || "unknown";
 		const prefix = `${username}_${media.code}`;
 
-		s.done(`${mediaUrls.length} media item(s) found`);
+		s.succeed(`${mediaUrls.length} media item(s) found`);
 		await this.downloadMediaUrls(mediaUrls, prefix, outputDir);
 	}
 
@@ -91,7 +91,7 @@ export class Downloader {
 		const feed = await profile.getProfileFeed(userId);
 		const userDir = path.join(outputDir, userId);
 
-		s.done(`${feed.length} posts to download`);
+		s.succeed(`${feed.length} posts to download`);
 
 		for (const item of feed) {
 			if (item.media_urls && item.media_urls.length > 0) {

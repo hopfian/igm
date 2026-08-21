@@ -1,5 +1,5 @@
 import type { IGClient } from "../../../core/http/ig-client";
-import type { NotificationItem } from "../models/user.model";
+import type { NotificationItem } from "../models/notification.model";
 
 export class Notifications {
 	private client: IGClient;

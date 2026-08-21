@@ -12,7 +12,8 @@ export class DefaultStrategy extends UnsendStrategy {
 	private _consecutiveFailures: number = 0;
 	private _MAX_PAGES_PER_RUN: number = 20;
 	private _maxConsecutiveFailures: number = 5;
-	private _minDelayMs: number = 1000;
+	private _minDelayMs: number = 400;
+	private _topFirst: boolean = false;
 
 	constructor(idmu: IDMU) {
 		super(idmu);
@@ -22,6 +23,7 @@ export class DefaultStrategy extends UnsendStrategy {
 		if (config?.maxFailures) this._maxConsecutiveFailures = config.maxFailures;
 		if (config?.delayMs) this._minDelayMs = config.delayMs;
 		if (config?.maxPagesPerRun) this._MAX_PAGES_PER_RUN = config.maxPagesPerRun;
+		if (config?.topFirst !== undefined) this._topFirst = config.topFirst;
 	}
 
 	isRunning(): boolean {
@@ -115,6 +117,13 @@ export class DefaultStrategy extends UnsendStrategy {
 
 	private async loadNextPage(): Promise<void> {
 		if (!this._abortController || this._abortController.signal.aborted) return;
+
+		if (!this._topFirst) {
+			this.idmu.setStatusText(`Monitoring current page for messages...`);
+			this._allPagesLoaded = true;
+			await this.unsendNextMessage();
+			return;
+		}
 
 		this.idmu.setStatusText(
 			`Loading next page... (Batch: ${this._pagesLoadedCount}/${this._MAX_PAGES_PER_RUN}) | Total Scrolled: ${this._totalPagesLoaded}`,

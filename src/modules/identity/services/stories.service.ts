@@ -1,7 +1,7 @@
 // ⚠️  DOC-SYNC: Any changes to this file MUST be reflected in docs/features.md (§ users/stories.ts)
 //     If methods, API endpoints, or return types change, update the docs.
 import type { IGClient } from "../../../core/http/ig-client";
-import type { StoryItem } from "../models/user.model";
+import type { StoryItem } from "../../../modules/timeline/models/timeline.model";
 
 export class Stories {
 	private client: IGClient;

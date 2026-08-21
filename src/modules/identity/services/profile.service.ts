@@ -2,10 +2,10 @@
 //     If methods, API endpoints, or return types change, update the method table in the docs.
 import type { IGClient } from "../../../core/http/ig-client";
 import { parseMediaNode } from "../../../modules/timeline/utils/media-extractor";
+import type { TimelineItem } from "../../../modules/timeline/models/timeline.model";
 import type {
 	FriendshipStatus,
 	ProfileInfo,
-	TimelineItem,
 } from "../models/user.model";
 
 export class Profile {

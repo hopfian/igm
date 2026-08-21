@@ -2,11 +2,8 @@ import chalk from "chalk";
 import { Theme } from "../../../shared/ui/theme";
 import { timeAgo } from "../../../shared/utils/formatters";
 import { renderTimeline } from "../../timeline/ui/timeline.renderer";
-import type {
-	NotificationItem,
-	StoryItem,
-	TimelineItem,
-} from "../models/user.model";
+import type { NotificationItem } from "../models/notification.model";
+import type { StoryItem, TimelineItem } from "../../../modules/timeline/models/timeline.model";
 
 export function renderNotifications(
 	newItems: NotificationItem[],

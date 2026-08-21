@@ -1,24 +1,247 @@
 # Core Engine (`src/core/`)
 
-The `core/` layer manages the foundational state of the IGM application, explicitly handling anti-detection networking, cookie management, and dynamic configuration resolution.
+The `core/` layer is the hardened foundation of IGM. It contains zero domain knowledge — no Instagram-specific business logic. Instead, it provides: a Chrome-impersonating HTTP engine, a Netscape cookie lifecycle manager, an XDG-compliant configuration store, and a mathematically-grounded anti-detection timing system.
 
-## `http/ig-client.ts`
-The `IGClient` class is a deeply hardened HTTP engine built to emulate the exact network signature of the official Instagram mobile and web clients. It implements a 5-layer defense strategy:
+**Related documentation**: [README.md](README.md) · [cli.md](cli.md) · [modules.md § Service Classes](modules.md)
 
-1. **TLS & HTTP/2 Impersonation**: Uses the `got-scraping` underlying engine to negotiate HTTP/2 with exact Chrome cipher suites, bypassing JA3/JA4 TLS fingerprinting.
-2. **Client Hints**: Injects strict `Sec-CH-UA` and `Sec-Fetch-*` headers matching Chrome 130 on Windows.
-3. **Dynamic Rollout Hashing**: Scrapes the Instagram homepage on initialization (`fetchRolloutHash`) to extract the dynamic `X-Instagram-AJAX` rollout hash (e.g., `1039665806`) and the internal `X-ASBD-ID` required by the `api/v1/` endpoints.
-4. **CSRF Lifecycle**: Parses `X-CSRFToken` dynamically from the `cookieString` using the `cookie-parser.ts` utility and updates the internal state on every `set-cookie` response.
-5. **Backoff and Jitter**: Integrates with the `human-delay.ts` module to intercept requests if the RPM (Requests Per Minute) exceeds 40, injecting non-deterministic sleep cycles to avoid velocity bans.
+---
 
-### Error Handling
-The `apiCall` method actively intercepts Meta's internal HTTP status codes:
-- **`challenge_required`**: Throws a specialized error halting execution immediately to prevent account lockouts.
-- **`429 Rate Limit`**: Parses the `retry-after` header and suspends the thread asynchronously up to `retryAttempts`.
-- **`5xx / ECONNRESET`**: Applies exponential backoff + jitter for unstable network connections.
+## IGClient Class
 
-## `auth/cookie-parser.ts`
-Standard API authentication is impossible due to encrypted payloads and Captchas. Instead, IGM directly mounts existing browser sessions via a Netscape `cookies.txt` file. The parser extracts the `sessionid`, `ds_user_id`, and `csrftoken` keys required to impersonate the user.
+**Source**: [`src/core/http/ig-client.ts`](../src/core/http/ig-client.ts)
 
-## `timing/human-delay.ts`
-Meta flags accounts that send API requests at exactly `1000ms` intervals. The `humanDelay(base, variance)` function uses a log-normal distribution to mathematically randomize delays (e.g., yielding clusters of 800ms delays, interspersed with occasional 2000ms delays) simulating real human interaction pauses.
+The `IGClient` is the single HTTP gateway for all Instagram API calls. Every service class in [`src/modules/`](modules.md) receives an `IGClient` instance via constructor injection and calls `client.apiCall()` to execute requests.
+
+### Constructor
+
+```typescript
+constructor(profileOverride?: string)
+```
+
+1. Loads the full [`IGMConfig`](README.md#igmconfig-interface) via `loadConfig()`.
+2. Resolves the cookie source: if `profileOverride` (or `config.activeProfile`) is not `"local"` and a matching entry exists in `config.profiles`, uses that raw cookie string. Otherwise, reads from `config.cookieFile` (default: `cookies.txt`).
+3. Calls [`loadCookies()`](#cookie-parser) to parse the cookie source into a semicolon-delimited cookie string.
+4. Extracts the initial CSRF token via [`extractCsrfToken()`](#cookie-parser).
+5. Copies `retryAttempts` and `retryDelayMs` from config into instance state.
+
+### Internal State
+
+| Property | Type | Initial Value | Purpose |
+|----------|------|---------------|---------|
+| `cookieString` | `string` | From cookie source | Raw `Cookie` header value sent with every request |
+| `csrfToken` | `string` | Extracted from cookies | `X-CSRFToken` header value |
+| `rolloutHash` | `string` | `"1039665806"` | `X-Instagram-AJAX` header — refreshed from live homepage |
+| `asbdId` | `string` | `"198387"` | `X-ASBD-ID` header — refreshed from live homepage |
+| `wwwClaim` | `string` | `"0"` | `X-IG-WWW-Claim` header — updated from API responses |
+| `rolloutRefreshed` | `boolean` | `false` | Gate to ensure `refreshRollout()` runs only once per session |
+| `lastRequestTime` | `number` | `0` | Timestamp of the previous request for inter-request delay calculation |
+| `requestCount` | `number` | `0` | Total requests this session for velocity monitoring |
+| `sessionStart` | `number` | `Date.now()` | Session start time for RPM calculation |
+
+### Public API
+
+#### `apiCall(endpoint, method?, data?, params?): Promise<any>`
+
+The primary method. Executes a fully hardened HTTP request through 5 active layers:
+
+| Layer | Name | Implementation |
+|-------|------|----------------|
+| L1 | Chrome TLS Impersonation | `got-scraping` negotiates HTTP/2 with Chrome cipher suites, bypassing JA3/JA4 fingerprinting |
+| L2 | HTTP/2 Protocol | `got-scraping` sends correct HTTP/2 SETTINGS frames matching real Chrome |
+| L3 | Full Header Suite | `buildHeaders()` injects 14 headers including `Sec-CH-UA`, `Sec-Fetch-*`, dynamic rollout values |
+| L4 | Real Session Cookies | Unmodified browser cookies passed in the `Cookie` header |
+| L5 | Human-Like Timing | `enforceHumanTiming()` + `humanDelay()` insert log-normal distributed delays |
+
+**Execution flow**:
+
+1. **Rollout Refresh** (`refreshRollout()`): On the very first API call of the session, fetches the Instagram homepage via [`fetchRolloutHash()`](#rollout-hash-scraper) to extract the live `server_revision` and `ASBD_ID`. This runs exactly once per `IGClient` instance (guarded by `rolloutRefreshed`). Stale rollout hashes are a known Instagram bot signal.
+
+2. **Human Timing** (`enforceHumanTiming()`): Calculates the elapsed time since `lastRequestTime`. If it's less than the log-normal delay generated by [`humanDelay(800, 0.6)`](#human-delay-generator), the thread sleeps for the difference. After the delay, it increments `requestCount` and checks the session's RPM (Requests Per Minute). If RPM exceeds **40**, it logs a warning via `chalk.yellow` and injects an additional 3000–5000ms random cooldown.
+
+3. **URL Resolution**: If `endpoint` starts with `"http"`, it's used as-is. Otherwise, it's prefixed with `https://www.instagram.com/api/v1/`. Query params are appended via `URLSearchParams`. POST bodies are form-encoded via `URLSearchParams`.
+
+4. **Request Execution**: Delegates to [`executeRequest()`](#request-execution).
+
+5. **Response Processing**: Extracts `x-ig-set-www-claim` to update `wwwClaim`. Extracts `set-cookie` headers and calls `updateCookies()` to merge them into the live cookie string.
+
+**Error handling** — the retry loop intercepts 5 distinct failure modes:
+
+| Status / Condition | Behavior | Retryable? |
+|--------------------|----------|------------|
+| `401` / `403` | Throws `"Authentication failed"` immediately | No |
+| Body contains `challenge_required` | Throws `"Instagram challenge required"` immediately | No |
+| `429` | Parses `retry-after` header (default 60s), sleeps, then retries | Yes |
+| `5xx` | Exponential backoff: `retryDelayMs * attempt + random(0,1000)` | Yes |
+| `ECONNRESET` / `ETIMEDOUT` / `ENOTFOUND` | Linear backoff: `retryDelayMs * attempt` | Yes |
+
+#### `getCookies(): string`
+
+Returns the current `cookieString`. Used by [`DirectMessaging.unsendAllMessages()`](modules.md#messaging-module) to pass cookies to the Playwright orchestrator.
+
+#### `updateCookies(setCookies: string[]): void`
+
+Merges an array of `Set-Cookie` response headers into the existing cookie string via [`mergeCookies()`](#cookie-parser). Re-extracts the CSRF token in case Instagram rotated it.
+
+### Header Construction (`buildHeaders()`)
+
+The private `buildHeaders()` method constructs 14 headers that exactly replicate a Chrome 130 on Windows 10 request:
+
+```
+Accept: */*
+Accept-Language: en-US,en;q=0.9
+Referer: https://www.instagram.com/
+Sec-CH-UA: "Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"
+Sec-CH-UA-Mobile: ?0
+Sec-CH-UA-Platform: "Windows"
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36
+X-CSRFToken: <dynamic>
+X-IG-App-ID: 936619743392459
+X-ASBD-ID: <dynamic>
+X-IG-WWW-Claim: <dynamic>
+X-Instagram-AJAX: <dynamic>
+X-Requested-With: XMLHttpRequest
+Cookie: <dynamic>
+```
+
+For POST requests, `Content-Type: application/x-www-form-urlencoded` is additionally set.
+
+---
+
+## Request Execution
+
+**Source**: [`src/core/http/request.ts`](../src/core/http/request.ts)
+
+### `executeRequest(url, method, headers, body?): Promise<ExecuteResponse>`
+
+The transport-level function. It lazy-loads `got-scraping` as the primary HTTP engine and falls back to `axios` if unavailable.
+
+**The ESM import trick**: `got-scraping` is an ESM-only package, but IGM compiles to CJS. TypeScript's `tsc` transforms `import()` calls into `require()` calls in CJS output mode, which breaks ESM loading. To work around this, the code uses `new Function("specifier", "return import(specifier)")` to generate a true runtime `import()` call that `tsc` cannot statically analyze or transform.
+
+#### Primary Path: `got-scraping`
+
+```typescript
+const options = {
+  url,
+  method,
+  headers,
+  headerGeneratorOptions: {
+    browsers: [{ name: "chrome", minVersion: 128, maxVersion: 131 }],
+    operatingSystems: ["windows"],
+  },
+  useHeaderGenerator: false,  // We provide our own headers
+  timeout: { request: 30000 },
+  throwHttpErrors: false,     // We handle status codes manually
+  body,  // if POST
+};
+```
+
+Key: `useHeaderGenerator: false` is critical — it tells `got-scraping` to use its Chrome TLS fingerprint for the TLS handshake but NOT to auto-generate browser headers. IGM provides its own complete header set via [`buildHeaders()`](#header-construction-buildheaders).
+
+#### Fallback Path: `axios`
+
+If `got-scraping` is not installed (e.g. in minimal deployments), falls back to standard `axios`. This loses TLS impersonation but retains all other layers (headers, cookies, timing).
+
+#### `ExecuteResponse` Interface
+
+```typescript
+interface ExecuteResponse {
+  data: any;           // Parsed JSON body (or raw string if JSON.parse fails)
+  newClaim?: string;   // x-ig-set-www-claim header value (if non-"0")
+  setCookies?: string[]; // set-cookie header values
+}
+```
+
+---
+
+## Rollout Hash Scraper
+
+**Source**: [`src/core/http/headers.ts`](../src/core/http/headers.ts)
+
+### `fetchRolloutHash(): Promise<{ rolloutHash, asbdId } | null>`
+
+Instagram's React frontend embeds two critical deployment-specific values in the HTML of the homepage:
+- `"server_revision":<number>` — The rollout hash, sent as `X-Instagram-AJAX`
+- `"ASBD_ID":"<number>"` — An internal deployment identifier, sent as `X-ASBD-ID`
+
+These values rotate with every Instagram deployment. Sending stale values is a strong bot signal because real browsers always have fresh values from their most recent page load.
+
+This function makes a raw `https.get()` request (bypassing `IGClient` entirely — no cookies, no retry logic) to `https://www.instagram.com/`, extracts the values via regex, and returns them. If the request fails or times out (8 second timeout), it returns `null` and the caller falls back to hardcoded defaults.
+
+---
+
+## Cookie Parser
+
+**Source**: [`src/core/auth/cookie-parser.ts`](../src/core/auth/cookie-parser.ts)
+
+### `loadCookies(cookieSource?: string): string`
+
+Parses a cookie source into a semicolon-delimited `name=value; name=value` string suitable for the HTTP `Cookie` header.
+
+**Input detection**:
+- If `cookieSource` contains `=` and does NOT end in `.txt`, it's treated as a raw cookie string and returned as-is. This is the path used for named profiles stored in `config.profiles`.
+- Otherwise, it's treated as a file path to a Netscape `cookies.txt` file.
+
+**Netscape format parsing**: Each non-comment, non-empty line is split by `\t` (tab). If the line has ≥7 tab-separated fields, `parts[5]` is the cookie name and `parts[6]` is the value. Lines beginning with `#` are skipped unless they start with `#HttpOnly_` (which is a valid Netscape cookie line).
+
+### `extractCsrfToken(cookieString: string): string`
+
+Extracts the `csrftoken` value from a cookie string using the regex `/csrftoken=([^;]+)/`. Returns an empty string if not found.
+
+### `mergeCookies(existingCookies, setCookieHeaders): string`
+
+Merges an array of `Set-Cookie` response headers into an existing cookie string.
+
+1. Parses the existing cookie string into a `Map<string, string>` by splitting on `;` and then on `=`.
+2. For each `Set-Cookie` header, extracts the primary `name=value` pair (the first segment before `;`).
+3. If the value is empty (`""` or `'""'`), the cookie is **deleted** from the map (Instagram sends `Max-Age=0` to expire cookies).
+4. Serializes the map back to a `name=value; name=value` string.
+
+---
+
+## Configuration Manager
+
+**Source**: [`src/core/config/config-manager.ts`](../src/core/config/config-manager.ts)
+
+Uses the [`Conf`](https://github.com/sindresorhus/conf) package with `projectName: "igm"`. `Conf` automatically persists to the OS-specific XDG config directory:
+- **Windows**: `%APPDATA%/igm/config.json`
+- **macOS**: `~/Library/Preferences/igm/config.json`
+- **Linux**: `~/.config/igm/config.json`
+
+### `loadConfig(): IGMConfig`
+
+Reads all config keys from the `Conf` store and returns a fully typed `IGMConfig` object. See [README.md § IGMConfig](README.md#igmconfig-interface) for the field table.
+
+### `saveConfig(updates: Partial<IGMConfig>): IGMConfig`
+
+Merges the provided partial updates with the current config and writes each key individually to the `Conf` store. Returns the merged config.
+
+---
+
+## Human Delay Generator
+
+**Source**: [`src/core/timing/human-delay.ts`](../src/core/timing/human-delay.ts)
+
+### `humanDelay(median?: number, sigma?: number): number`
+
+Generates a random delay in milliseconds drawn from a **log-normal distribution**. The log-normal distribution is ideal for modeling human reaction times because it produces many short delays with occasional longer pauses — the exact pattern of real human browsing behavior.
+
+**Mathematical implementation**:
+
+1. **Box-Muller Transform**: Generates a standard normal variate `z` from two uniform random numbers `u1`, `u2`:
+   ```
+   z = sqrt(-2 * ln(u1)) * cos(2π * u2)
+   ```
+
+2. **Log-Normal Conversion**: Converts the normal variate to a log-normal variate:
+   ```
+   delay = exp(ln(median) + sigma * z)
+   ```
+
+3. **Clamping**: The result is clamped to the range `[200ms, 5000ms]` to prevent pathologically short or long delays.
+
+**Default parameters**: `median = 800ms`, `sigma = 0.6`. With these defaults, the distribution produces a median delay of ~800ms, with 68% of values falling between ~450ms and ~1400ms. The right tail occasionally produces delays of 2000–4000ms, perfectly mimicking human "distraction" pauses.
+
+**Why not uniform random?** A uniform distribution between 500–1500ms produces a flat histogram that is trivially detectable by Instagram's statistical analysis. The log-normal distribution matches the actual distribution of human inter-click intervals measured in UX research.

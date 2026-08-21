@@ -149,16 +149,16 @@ export async function runUnsendPlaywright(
 						gap: 12px;
 					}
 					.idmu-dot {
-						width: 10px; height: 10px;
+						width: 12px; height: 12px;
 						border-radius: 50%;
 						background-color: #FF1493;
-						box-shadow: 0 0 8px #FF1493, 0 0 12px #FF1493;
-						animation: idmuPulseDot 1.5s infinite alternate;
+						box-shadow: 0 0 12px #FF1493, 0 0 20px #FF1493;
+						animation: idmuPulseDot 1.2s infinite alternate ease-in-out;
 						flex-shrink: 0;
 					}
 					@keyframes idmuPulseDot {
-						0% { opacity: 0.4; transform: scale(0.8); box-shadow: 0 0 4px #FF1493; }
-						100% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 12px #FF1493, 0 0 20px #FF1493; }
+						0% { opacity: 0.3; transform: scale(0.7); box-shadow: 0 0 4px #FF1493; }
+						100% { opacity: 1; transform: scale(1.3); box-shadow: 0 0 16px #FF1493, 0 0 24px #FF1493; }
 					}
 				`;
 				document.head.appendChild(style);
@@ -257,7 +257,7 @@ export async function runUnsendPlaywright(
 			const engineConfig = {
 				delayMs: config.delayMs,
 				maxFailures: config.maxFailures,
-				maxPagesPerRun: 3, // Always unsend dynamically on the way up
+				topFirst: config.topFirst,
 			};
 			const runUnsent = await page.evaluate(async (cfg: any) => {
 				if (window.idmuEngine) {
