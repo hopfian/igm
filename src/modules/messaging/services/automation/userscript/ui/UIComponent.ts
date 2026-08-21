@@ -13,12 +13,13 @@ export abstract class UIComponent {
 		target: Element,
 		getElement: (mutations?: MutationRecord[]) => T | null | undefined,
 		abortController: AbortController,
-	): Promise<T> {
+		timeoutMs?: number,
+	): Promise<T | null> {
 		const immediateElement = getElement();
 		if (immediateElement) {
 			return Promise.resolve(immediateElement);
 		}
-		return waitForElement(target, getElement, abortController);
+		return waitForElement(target, getElement, abortController, timeoutMs);
 	}
 
 	clickElementAndWaitFor<T extends Element | boolean>(
@@ -26,12 +27,14 @@ export abstract class UIComponent {
 		target: Element,
 		getElement: (mutations?: MutationRecord[]) => T | null | undefined,
 		abortController: AbortController,
-	): Promise<T> | T {
+		timeoutMs?: number,
+	): Promise<T | null> | T {
 		return clickElementAndWaitFor(
 			clickTarget,
 			target,
 			getElement,
 			abortController,
+			timeoutMs,
 		);
 	}
 }

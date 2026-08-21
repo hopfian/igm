@@ -90,59 +90,14 @@ export class UIMessage extends UIComponent {
 		};
 		collectTargets(this.root, 0);
 
-		for (let attempt = 0; attempt < 3; attempt++) {
-			if (abortController.signal.aborted) return null;
+		const actionButton = await this.waitForElement(
+			this.root,
+			() => this._findActionButton(this.root),
+			abortController,
+			3000,
+		);
 
-			for (const target of hoverTargets) {
-				dispatchHoverIn(target);
-			}
-
-			await new Promise((resolve) => setTimeout(resolve, 100));
-
-			const btn = this._findActionButton(this.root);
-			if (btn) return btn;
-
-			dispatchHoverOut(this.root);
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
-
-		const waitAbortController = new AbortController();
-		let promiseTimeout: NodeJS.Timeout | undefined;
-		const abortHandler = () => {
-			waitAbortController.abort(
-				"showActionsMenuButton step was aborted by the parent process",
-			);
-			clearTimeout(promiseTimeout);
-		};
-		abortController.signal.addEventListener("abort", abortHandler);
-
-		for (const target of hoverTargets) {
-			dispatchHoverIn(target);
-		}
-
-		try {
-			const actionButton = await Promise.race([
-				this.waitForElement(
-					this.root,
-					() => this._findActionButton(this.root),
-					waitAbortController,
-				),
-				new Promise<null>((resolve, reject) => {
-					promiseTimeout = setTimeout(
-						() => reject("Timeout showActionsMenuButton"),
-						3000,
-					);
-				}),
-			]);
-
-			return actionButton;
-		} catch (e) {
-			return null;
-		} finally {
-			waitAbortController.abort();
-			clearTimeout(promiseTimeout);
-			abortController.signal.removeEventListener("abort", abortHandler);
-		}
+		return actionButton as HTMLButtonElement | null;
 	}
 
 	async hideActionMenuButton(
@@ -154,116 +109,63 @@ export class UIMessage extends UIComponent {
 			dispatchHoverOut(noneEl);
 		}
 
-		const waitAbortController = new AbortController();
-		let promiseTimeout: NodeJS.Timeout | undefined;
-		let resolveTimeout: (() => void) | undefined;
-		const abortHandler = () => {
-			waitAbortController.abort(
-				"hideActionMenuButton step was aborted by the parent process",
-			);
-			clearTimeout(promiseTimeout);
-			if (resolveTimeout) resolveTimeout();
-		};
-		abortController.signal.addEventListener("abort", abortHandler);
-
-		try {
-			const result = await Promise.race([
-				this.waitForElement(
-					this.root,
-					() => this._findActionButton(this.root) === null,
-					waitAbortController,
-				),
-				new Promise<boolean>((resolve, reject) => {
-					resolveTimeout = resolve as () => void;
-					promiseTimeout = setTimeout(
-						() => reject("Timeout hideActionMenuButton"),
-						500,
-					);
-				}),
-			]);
-			return result as boolean;
-		} catch (e) {
-			return false;
-		} finally {
-			waitAbortController.abort();
-			clearTimeout(promiseTimeout);
-			abortController.signal.removeEventListener("abort", abortHandler);
-		}
+		const result = await this.waitForElement(
+			this.root,
+			() => (this._findActionButton(this.root) === null ? true : null),
+			abortController,
+			500,
+		);
+		return result === true;
 	}
 
 	async openActionsMenu(
 		actionButton: HTMLButtonElement,
 		abortController: AbortController,
 	): Promise<HTMLElement | null> {
-		const waitAbortController = new AbortController();
-		let promiseTimeout: NodeJS.Timeout | undefined;
-		const abortHandler = () => {
-			waitAbortController.abort(
-				"openActionsMenu step was aborted by the parent process",
-			);
-			clearTimeout(promiseTimeout);
-		};
-		abortController.signal.addEventListener("abort", abortHandler);
-
 		const isUnsendText = (text: string | null) => {
 			if (!text) return false;
 			const normalized = text.trim().toLocaleLowerCase();
 			return UNSEND_TEXT_VARIANTS.some((v) => normalized === v);
 		};
 
-		try {
-			const unsendButton = await Promise.race([
-				this.clickElementAndWaitFor(
-					actionButton,
-					this.root.ownerDocument.body,
-					(mutations) => {
-						if (mutations) {
-							const addedNodes = mutations
-								.flatMap((mutation) => Array.from(mutation.addedNodes))
-								.filter((node) => node.nodeType === 1) as HTMLElement[];
-							for (const addedNode of addedNodes) {
-								const node = Array.from(
-									addedNode.querySelectorAll("span,div"),
-								).find(
-									(node) =>
-										isUnsendText(node.textContent) &&
-										node.firstChild?.nodeType === 3,
-								);
-								if (node) return node as HTMLElement;
-							}
-						}
-						const allSpans = this.root.ownerDocument.querySelectorAll(
-							"[role=menu] span, [role=menu] div, [role=menuitem] span, [role=menuitem] div",
+		const unsendButton = await this.clickElementAndWaitFor(
+			actionButton,
+			this.root.ownerDocument.body,
+			(mutations) => {
+				if (mutations) {
+					const addedNodes = mutations
+						.flatMap((mutation) => Array.from(mutation.addedNodes))
+						.filter((node) => node.nodeType === 1) as HTMLElement[];
+					for (const addedNode of addedNodes) {
+						const node = Array.from(
+							addedNode.querySelectorAll("span,div"),
+						).find(
+							(node) =>
+								isUnsendText(node.textContent) &&
+								node.firstChild?.nodeType === 3,
 						);
-						for (let i = 0; i < allSpans.length; i++) {
-							const span = allSpans[i];
-							if (
-								isUnsendText(span.textContent) &&
-								span.firstChild?.nodeType === 3
-							) {
-								return span as HTMLElement;
-							}
-						}
-						return null;
-					},
-					waitAbortController,
-				),
-				new Promise<HTMLElement | null>((resolve, reject) => {
-					promiseTimeout = setTimeout(
-						() => reject("Timeout openActionsMenu"),
-						3000,
-					);
-				}),
-			]);
+						if (node) return node as HTMLElement;
+					}
+				}
+				const allSpans = this.root.ownerDocument.querySelectorAll(
+					"[role=menu] span, [role=menu] div, [role=menuitem] span, [role=menuitem] div",
+				);
+				for (let i = 0; i < allSpans.length; i++) {
+					const span = allSpans[i];
+					if (
+						isUnsendText(span.textContent) &&
+						span.firstChild?.nodeType === 3
+					) {
+						return span as HTMLElement;
+					}
+				}
+				return null;
+			},
+			abortController,
+			3000,
+		);
 
-			return unsendButton as HTMLElement;
-		} catch (e) {
-			return null;
-		} finally {
-			waitAbortController.abort();
-			clearTimeout(promiseTimeout);
-			abortController.signal.removeEventListener("abort", abortHandler);
-		}
+		return unsendButton as HTMLElement | null;
 	}
 
 	async closeActionsMenu(
@@ -271,40 +173,14 @@ export class UIMessage extends UIComponent {
 		actionsMenuElement: HTMLElement,
 		abortController: AbortController,
 	): Promise<boolean> {
-		const waitAbortController = new AbortController();
-		let promiseTimeout: NodeJS.Timeout | undefined;
-		const abortHandler = () => {
-			waitAbortController.abort(
-				"closeActionsMenu step was aborted by the parent process",
-			);
-			clearTimeout(promiseTimeout);
-		};
-		abortController.signal.addEventListener("abort", abortHandler);
-
-		try {
-			const result = await Promise.race([
-				this.clickElementAndWaitFor(
-					actionButton,
-					this.root.ownerDocument.body,
-					() =>
-						this.root.ownerDocument.body.contains(actionsMenuElement) === false,
-					abortController,
-				),
-				new Promise<boolean>((resolve, reject) => {
-					promiseTimeout = setTimeout(
-						() => reject("Timeout closeActionsMenu"),
-						500,
-					);
-				}),
-			]);
-			return result !== null;
-		} catch (e) {
-			return false;
-		} finally {
-			waitAbortController.abort();
-			clearTimeout(promiseTimeout);
-			abortController.signal.removeEventListener("abort", abortHandler);
-		}
+		const result = await this.clickElementAndWaitFor(
+			actionButton,
+			this.root.ownerDocument.body,
+			() => (this.root.ownerDocument.body.contains(actionsMenuElement) === false ? true : null),
+			abortController,
+			500,
+		);
+		return result === true;
 	}
 
 	openConfirmUnsendModal(

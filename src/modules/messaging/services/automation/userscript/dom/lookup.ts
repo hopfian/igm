@@ -171,14 +171,12 @@ export async function loadMoreMessages(
 		}
 		
 		if (loader) {
-			await Promise.race([
-				waitForElement(
-					root,
-					() => findVisibleLoader() === null,
-					abortController,
-				),
-				new Promise((resolve) => setTimeout(resolve, 5000)),
-			]);
+			await waitForElement(
+				root,
+				() => (findVisibleLoader() === null ? true : null),
+				abortController,
+				5000,
+			);
 			abortController.signal.removeEventListener("abort", abortHandler);
 			return !(root.scrollHeight > beforeHeight);
 		}
@@ -192,22 +190,17 @@ export async function loadMoreMessages(
 
 	let loadingElement: any;
 	try {
-		loadingElement = await Promise.race([
-			waitForElement(
-				root,
-				() => {
-					if (findVisibleLoader() === null) {
-						root.scrollTop = scrollToTopValue;
-					}
-					return findVisibleLoader();
-				},
-				scrollAbortController,
-			),
-			new Promise((resolve) => {
-				resolveTimeout = resolve as () => void;
-				findLoaderTimeout = setTimeout(() => resolve(null), 3000);
-			}),
-		]);
+		loadingElement = await waitForElement(
+			root,
+			() => {
+				if (findVisibleLoader() === null) {
+					root.scrollTop = scrollToTopValue;
+				}
+				return findVisibleLoader();
+			},
+			scrollAbortController,
+			3000,
+		);
 	} catch (ex) {
 		console.error(ex);
 	}
@@ -219,10 +212,12 @@ export async function loadMoreMessages(
 	clearTimeout(findLoaderTimeout);
 
 	if (loadingElement && loadingElement !== true) {
-		await Promise.race([
-			waitForElement(root, () => findVisibleLoader() === null, abortController),
-			new Promise((resolve) => setTimeout(resolve, 5000)),
-		]);
+		await waitForElement(
+			root,
+			() => (findVisibleLoader() === null ? true : null),
+			abortController,
+			5000,
+		);
 	}
 
 	return isAtTop();
