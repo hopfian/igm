@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+cookies.txt
+*.log
+.env
+.igmrc.json
