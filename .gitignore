@@ -5,3 +5,5 @@ cookies.txt
 *.log
 .env
 .igmrc.json
+igm.exe
+sea-prep.blob

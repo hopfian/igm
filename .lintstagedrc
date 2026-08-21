@@ -1,0 +1,6 @@
+{
+  "*.{ts,js}": [
+    "biome check --apply",
+    "biome format --write"
+  ]
+}
