@@ -1,17 +1,24 @@
 # Core Engine (`src/core/`)
 
-The `core/` layer is the foundational engine of IGM. It handles network transport, authentication state, runtime configuration, and anti-detection delays.
+The `core/` layer manages the foundational state of the IGM application, explicitly handling anti-detection networking, cookie management, and dynamic configuration resolution.
 
-## Components
+## `http/ig-client.ts`
+The `IGClient` class is a deeply hardened HTTP engine built to emulate the exact network signature of the official Instagram mobile and web clients. It implements a 5-layer defense strategy:
 
-### 1. `http/ig-client.ts`
-The `IGClient` is a specialized HTTP engine designed to perfectly mimic the official Instagram mobile and web applications. It uses HTTP/2 ALPN negotiation and strict TLS fingerprinting to bypass Meta's automated scraping defenses. It automatically injects the required `X-IG-App-ID`, `X-Instagram-AJAX`, and CSRF tokens into every request.
+1. **TLS & HTTP/2 Impersonation**: Uses the `got-scraping` underlying engine to negotiate HTTP/2 with exact Chrome cipher suites, bypassing JA3/JA4 TLS fingerprinting.
+2. **Client Hints**: Injects strict `Sec-CH-UA` and `Sec-Fetch-*` headers matching Chrome 130 on Windows.
+3. **Dynamic Rollout Hashing**: Scrapes the Instagram homepage on initialization (`fetchRolloutHash`) to extract the dynamic `X-Instagram-AJAX` rollout hash (e.g., `1039665806`) and the internal `X-ASBD-ID` required by the `api/v1/` endpoints.
+4. **CSRF Lifecycle**: Parses `X-CSRFToken` dynamically from the `cookieString` using the `cookie-parser.ts` utility and updates the internal state on every `set-cookie` response.
+5. **Backoff and Jitter**: Integrates with the `human-delay.ts` module to intercept requests if the RPM (Requests Per Minute) exceeds 40, injecting non-deterministic sleep cycles to avoid velocity bans.
 
-### 2. `auth/cookie-parser.ts`
-Because Instagram uses heavily secured, HttpOnly cookies, standard login flows are unreliable. The `cookie-parser.ts` reads exported Netscape `cookies.txt` files directly, extracting the `sessionid`, `csrftoken`, and `ds_user_id`.
+### Error Handling
+The `apiCall` method actively intercepts Meta's internal HTTP status codes:
+- **`challenge_required`**: Throws a specialized error halting execution immediately to prevent account lockouts.
+- **`429 Rate Limit`**: Parses the `retry-after` header and suspends the thread asynchronously up to `retryAttempts`.
+- **`5xx / ECONNRESET`**: Applies exponential backoff + jitter for unstable network connections.
 
-### 3. `config/config-manager.ts`
-The configuration manager dynamically resolves settings from `.igmrc.json`, environment variables, and fallback defaults. It supports runtime overrides for `cardWidth`, `defaultCount`, and `retryDelayMs`.
+## `auth/cookie-parser.ts`
+Standard API authentication is impossible due to encrypted payloads and Captchas. Instead, IGM directly mounts existing browser sessions via a Netscape `cookies.txt` file. The parser extracts the `sessionid`, `ds_user_id`, and `csrftoken` keys required to impersonate the user.
 
-### 4. `timing/human-delay.ts`
-To evade rate limits when performing bulk API calls (e.g. liking, commenting), the `human-delay.ts` utility calculates non-linear, jittered micro-sleeps. This mathematically prevents requests from clustering on perfect millisecond intervals, which is a common heuristic used by Meta to ban bots.
+## `timing/human-delay.ts`
+Meta flags accounts that send API requests at exactly `1000ms` intervals. The `humanDelay(base, variance)` function uses a log-normal distribution to mathematically randomize delays (e.g., yielding clusters of 800ms delays, interspersed with occasional 2000ms delays) simulating real human interaction pauses.

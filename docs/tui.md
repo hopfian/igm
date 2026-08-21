@@ -1,25 +1,16 @@
-# Terminal UI (`src/tui/`)
+# Blessed Terminal UI (`src/tui/`)
 
-The IGM `tui/` layer is a highly advanced, fully interactive terminal dashboard powered by [Blessed](https://github.com/chjj/blessed).
+The IGM `tui/` application is an interactive graphical dashboard built on [Blessed](https://github.com/chjj/blessed), bypassing `stdout` to render absolute-positioned box elements over the terminal emulator.
 
-It bypasses standard CLI stdin/stdout streaming and completely takes over the terminal window to render absolute-positioned boxes, scrollable lists, and interactive menus, mimicking a native desktop application entirely within the command line.
+## `layout.ts` (Grid Engine)
+Instead of linear text outputs, `layout.ts` initializes the `blessed.screen` and generates a CSS-like flexbox grid.
+- **Components**: Instantiates a top `statusBar` (height: 1), a `leftPane` spanning 50% width ("Timeline"), and a `rightPane` spanning 50% width ("Inbox").
+- **State Management**: Mounts global hotkeys (`Tab` to cycle `focusIndex` across Panes, `Enter` to open selections, `Q` to quit).
 
-## Architecture
+## `components/inbox.ts`
+Hooks directly into `src/modules/messaging/services/messaging.service.ts`.
+It renders a highly-optimized `blessed.list` that listens to `up` and `down` key events to cycle through DM threads asynchronously.
 
-- `index.ts`: The bootstrap entry point. Initializes the Blessed `screen`, handles global keyboard shortcuts (e.g. `q`, `C-c` to quit), and mounts the master layout.
-- `layout.ts`: Defines the responsive CSS-like grid structure for the terminal. It sets up the sidebar navigation, the main content area, and the bottom status bar.
-- `components/`: Specific "pages" or "widgets" within the TUI.
-
-## Components
-
-### `components/inbox.ts`
-The Inbox component fetches threads from `messaging.service.ts` and renders them in a highly optimized `blessed.list`. It supports keyboard navigation (up/down arrows) to scroll through threads dynamically.
-
-### `components/timeline.ts`
-The Timeline component connects to `timeline.service.ts` to display rich Instagram posts. Because terminals cannot render images natively, it relies on advanced box-drawing characters and text-based formatting to represent visual posts, captions, and engagement metrics (likes/comments).
-
-## Usage
-The TUI is launched via the `dashboard` command.
-```bash
-igm dashboard
-```
+## `components/timeline.ts`
+Hooks into `src/modules/timeline/services/timeline.service.ts`.
+Because terminals lack native raster image rendering, it uses ANSI box-drawing constraints to format post captions, like counts, and engagement metrics into constrained terminal real estate, dynamically truncating text based on the terminal's active `process.stdout.columns` width.

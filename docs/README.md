@@ -1,27 +1,37 @@
 # IGM (Instagram Terminal) Developer Documentation
 
-IGM is a command-line interface and terminal user interface for interacting with Instagram's internal APIs. It provides a robust, anti-detection networking layer, a terminal-native presentation layer, and an advanced Playwright-based automation engine for bulk operations.
+IGM is an advanced command-line interface and terminal user interface designed to interface securely with Instagram's internal private APIs (`api/v1`). It bypasses modern Meta bot-detection heuristics (like TLS fingerprinting, rate limit traps, and DOM interaction monitoring) through a hardened network layer and an embedded Playwright engine.
 
 ## Domain-Driven Design (DDD) Architecture
 
-The codebase has been heavily refactored into a strict Domain-Driven Design structure to encapsulate business logic, UI rendering, and network requests by domain.
+The codebase inside `src/` follows strict Domain-Driven Design principles, isolating side-effects and enforcing single-responsibility across layers.
 
-The `src/` directory is organized into five primary layers:
+- **`cli/`**: The yargs-based CLI router. It handles argument parsing, resolves global export flags (e.g., `--json`, `--csv`), and invokes the respective `modules/` renderers or services.
+- **`core/`**: The foundational hardened layer.
+  - `http/ig-client.ts`: The HTTP/2 request engine leveraging `got-scraping` to perform Chrome TLS impersonation, dynamic `X-Instagram-AJAX` rollout hashing, and automatic CSRF lifecycle management.
+  - `timing/human-delay.ts`: Implements log-normal distribution micro-sleeps to evade fixed-interval rate-limit detection algorithms.
+- **`modules/`**: Encapsulates specific Instagram domains.
+  - `auth/`: Handles raw `cookies.txt` parsing and session restoration.
+  - `identity/`: Wraps user-centric APIs (`users/:id/info/`, `friendships/show/`). See `profile.service.ts` for direct mapping.
+  - `messaging/`: Handles the Direct Message APIs (`direct_v2`) and the embedded IDMU automation subsystem.
+  - `media-sync/`: Handles parallel downloading and asset resolution.
+  - `timeline/`: Parses complex nested `media` nodes from the feed APIs (Explore, Reels, Home) using `media-extractor.ts`.
+- **`tui/`**: A fully interactive, stateful terminal dashboard built on `blessed`. It utilizes a grid-based `layout.ts` to manage rendering `components/inbox.ts` and `components/timeline.ts` in real-time.
+- **`shared/`**: Global UI rendering components (like the `card.component.ts` box-drawer) and API DTOs.
 
-- **[`cli/`](cli.md)**: The command-line router. Binds CLI arguments (via yargs) to domain modules and services.
-- **[`core/`](core.md)**: The foundational network and authentication layer. Contains the `IGClient`, `cookies.txt` parser, HTTP/2 TLS impersonation engine, rate-limit backoff, and rollout sync.
-- **[`modules/`](modules.md)**: The business domain layer. Encapsulates all domain-specific models, services, and CLI UI renderers into distinct domains (`auth`, `identity`, `media-sync`, `messaging`, `timeline`).
-- **`shared/`**: Global DTOs (Data Transfer Objects for the Instagram API), utilities, and shared CLI UI components (e.g., interactive paginators, spinners).
-- **[`tui/`](tui.md)**: The Blessed-based full Terminal User Interface application.
+## Advanced Subsystems: IDMU Automation
 
-## Advanced Subsystems
-- **[`automation/`](automation.md)**: Embedded inside `modules/messaging/`, this is the IDMU (Instagram Direct Message Unsender) subsystem. It injects a hyper-optimized userscript into a Playwright browser to aggressively unsend messages while completely evading Instagram's bot-detection heuristics via vSync scroll-synchronization and `O(1)` geometrical DOM targeting.
+Standard API calls for unsending messages are aggressively rate-limited (often soft-banning accounts after 20-30 requests). 
+To circumvent this, IGM embeds the **IDMU (Instagram Direct Message Unsender)** subsystem inside `src/modules/messaging/services/automation`.
 
-## Configuration
+IDMU spins up a headless Playwright Chromium instance (`unsend-playwright.ts`), strips out standard `navigator.webdriver` automation fingerprints via `addInitScript`, and injects a custom, highly-optimized React-aware Userscript (`idmu.user.js`) directly into the official Instagram web interface.
 
-IGM relies on a `.igmrc.json` configuration file in the working directory and a valid Netscape format `cookies.txt` file for authentication.
+This allows IGM to unsend thousands of messages by visually manipulating the DOM in `O(1)` time using `getBoundingClientRect` geometrical checks and `requestAnimationFrame` vSync synchronized scrolling, entirely avoiding API blocks.
 
-Default configuration:
+## Global Configuration
+
+IGM relies on `.igmrc.json` and a Netscape `cookies.txt` file for authentication.
+
 ```json
 {
   "cookieFile": "cookies.txt",
@@ -32,36 +42,3 @@ Default configuration:
   "retryDelayMs": 1000
 }
 ```
-
-## Global CLI Export Flags
-
-Most commands support data export instead of UI rendering:
-- `--json`: Output indented JSON.
-- `--jsonl` or `--pipe`: Output JSON Lines for stdout piping.
-- `--csv`: Output flattened CSV format.
-- `--out <file>`: Write results to a file and show a terminal preview.
-
-## Quick Command Reference
-
-### Authentication (`igm auth`)
-- `igm auth login`: Validates `cookies.txt` and caches the App ID rollout sync state.
-
-### Messaging (`igm dm`)
-- `igm dm inbox`: View active DM threads.
-- `igm dm thread <id>`: View messages in a specific thread.
-- `igm dm unsend <thread> <item>`: Unsend a single message via API.
-- `igm dm unsend-all <id>`: Spawns the IDMU automation engine to unsend all messages.
-
-### Timeline & Explore (`igm discover`)
-- `igm discover feed`: View the home timeline feed.
-- `igm discover explore`: View the explore grid.
-- `igm discover reels`: View global reels.
-
-### Identity & Users (`igm identity`)
-- `igm identity info <username>`: View detailed profile information.
-- `igm identity feed <username>`: View a user's chronological post feed.
-- `igm identity status <username>`: Check friendship status (following/blocked/muted).
-- `igm identity search <query>`: Search for accounts.
-
-### TUI Dashboard (`igm dashboard`)
-- `igm dashboard`: Launches the interactive Blessed Terminal UI.
