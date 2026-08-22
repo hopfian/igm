@@ -161,6 +161,24 @@ This index maps every source file to its documentation section for rapid navigat
 
 - [**Contributing Guidelines**](../CONTRIBUTING.md): Learn how to report bugs, suggest features, and submit pull requests.
 - [**Code of Conduct**](../CODE_OF_CONDUCT.md): Our pledge to maintain a welcoming, inclusive, and harassment-free community.
+- [**Security Policy**](../SECURITY.md): Instructions for reporting vulnerabilities safely.
+- [**Changelog**](CHANGELOG.md): History of all notable changes to the project.
+
+---
+
+## Contributors
+
+Thanks to everyone who has contributed to IGM!
+
+<a href="https://github.com/hopfian/igm/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=hopfian/igm" alt="Contributors" />
+</a>
+
+---
+
+## License
+
+This project is licensed under the [ISC License](../LICENSE).
 
 ---
 

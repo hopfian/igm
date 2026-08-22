@@ -1,0 +1,49 @@
+ISC LICENSE AND END-USER AGREEMENT
+
+Copyright (c) 2026, IGM Contributors
+
+This document constitutes a binding legal agreement encompassing the standard ISC License grant, supplemented by extensive operational, liability, and usage conditions specific to the IGM (Instagram Terminal) software.
+
+## PART I: THE ISC LICENSE GRANT
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+## PART II: EXTENDED TERMS AND CONDITIONS OF USE
+
+### 1. API Usage and Third-Party Terms
+
+The IGM software interfaces directly with undocumented, private, and proprietary Application Programming Interfaces (APIs) owned by Meta Platforms, Inc. ("Instagram"). By executing, distributing, or modifying this software, you acknowledge and agree that:
+
+a) The software operates outside the bounds of the official Instagram Graph API.
+
+b) Usage of this software may inherently violate the Instagram Terms of Service, Community Guidelines, and Developer Policies.
+
+c) The Authors and Contributors of IGM hold no affiliation, partnership, or endorsement from Meta Platforms, Inc.
+
+### 2. Absolute Waiver of Liability for Account Termination
+
+The multi-layered anti-detection mechanisms (including TLS fingerprinting evasion, dynamic rollout hashing, and timing obfuscation) provided by this software are experimental and offered strictly on an "AS IS" basis. The Authors bear ZERO responsibility, liability, or obligation for any repercussions resulting from your use of this software, including but not limited to:
+
+a) Temporary action blocks, shadow-bans, or API rate-limiting.
+
+b) Permanent account suspension, termination, or data deletion by Meta Platforms, Inc.
+
+c) Legal action, cease-and-desist orders, or litigation initiated by third parties due to automated interactions.
+
+### 3. Acceptable Use and Automation Restrictions
+
+You are granted permission to use this software for educational, research, and personal automation purposes. However, you explicitly agree NOT to utilize this software for:
+
+a) Mass-scale spam, harassment, or malicious botnet operations.
+
+b) Unsolicited commercial advertising or inauthentic engagement farming.
+
+c) The unauthorized scraping, distribution, or monetization of Personally Identifiable Information (PII) belonging to third-party users.
+
+### 4. Severability
+
+If any provision of this Extended License and End-User Agreement is held to be invalid, illegal, or unenforceable by a court of competent jurisdiction, the remaining provisions shall nevertheless remain in full force and effect. The invalid provision shall be modified to the minimum extent necessary to render it enforceable while preserving the original intent of the Authors.
+
+By deploying, executing, or viewing the source code of IGM, you signify your irrevocable acceptance of both the ISC License Grant and these Extended Terms and Conditions.
