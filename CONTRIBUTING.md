@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../../assets/IGM_Contribution_Banner.png" alt="Contribution Banner" width="500" />
+  <img src="assets/IGM_Contribution_Banner.png" alt="Contribution Banner" width="500" />
 </div>
 
 # Contributing to IGM
@@ -54,11 +54,11 @@ gitGraph
 
 If you are contributing code, please refer to our comprehensive Developer Documentation in the `docs/` folder:
 
-*   [**Architecture Overview**](../README.md) - Start here to understand the high-level design.
-*   [**CLI Reference**](../cli.md) - Guide to `yargs` setup and command registration.
-*   [**Core Engine**](../core.md) - The HTTP client, TLS impersonation, and anti-detection systems.
-*   [**Domain Modules**](../modules.md) - Business logic (Identity, Timeline, Messaging, etc.).
-*   [**IDMU Automation**](../automation.md) - The headless browser automation subsystem.
+*   [**Architecture Overview**](docs/README.md) - Start here to understand the high-level design.
+*   [**CLI Reference**](docs/cli.md) - Guide to `yargs` setup and command registration.
+*   [**Core Engine**](docs/core.md) - The HTTP client, TLS impersonation, and anti-detection systems.
+*   [**Domain Modules**](docs/modules.md) - Business logic (Identity, Timeline, Messaging, etc.).
+*   [**IDMU Automation**](docs/automation.md) - The headless browser automation subsystem.
 
 ## Local Development Setup
 

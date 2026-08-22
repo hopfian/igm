@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../../assets/IGM_Security_Banner.png" alt="Security Banner" width="500" />
+  <img src="assets/IGM_Security_Banner.png" alt="Security Banner" width="500" />
 </div>
 
 # Security Policy

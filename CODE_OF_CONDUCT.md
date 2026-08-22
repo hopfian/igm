@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../../assets/IGM_CoC_Banner.png" alt="Code of Conduct Banner" width="500" />
+  <img src="assets/IGM_CoC_Banner.png" alt="Code of Conduct Banner" width="500" />
 </div>
 
 # Contributor Covenant Code of Conduct
