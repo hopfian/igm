@@ -164,14 +164,16 @@ This index maps every source file to its documentation section for rapid navigat
 - [**Security Policy**](../SECURITY.md): Instructions for reporting vulnerabilities safely.
 - [**Changelog**](CHANGELOG.md): History of all notable changes to the project.
 
+For general questions, business inquiries, or private reports, please contact the maintainer at **step-wizard-spill@duck.com**.
+
 ---
 
 ## Contributors
 
 Thanks to everyone who has contributed to IGM!
 
-<a href="https://github.com/hopfian/igm/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=hopfian/igm" alt="Contributors" />
+<a href="https://github.com/hopfian">
+  <img src="https://github.com/hopfian.png" alt="hopfian" width="50" height="50" />
 </a>
 
 ---
