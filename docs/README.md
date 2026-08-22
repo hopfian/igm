@@ -3,9 +3,9 @@
 </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-E1306C?style=flat-square" alt="Version" />
-  <img src="https://img.shields.io/badge/build-passing-success?style=flat-square" alt="Build" />
-  <img src="https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/TypeScript-000000?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Playwright-E1306C?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright" />
+  <img src="https://img.shields.io/badge/Node.js-000000?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
 </div>
 
 # IGM Developer Documentation
