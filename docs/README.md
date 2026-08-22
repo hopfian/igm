@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="../assets/IGM_Logo.png" alt="IGM Logo" width="200" />
+</div>
+
 # IGM Developer Documentation
 
 IGM (Instagram Terminal) is a hardened command-line interface and interactive terminal dashboard for Instagram's internal private `api/v1` endpoints. It implements multi-layered anti-detection networking (TLS fingerprinting evasion, dynamic rollout hashing, log-normal request timing), domain-driven business logic encapsulation, and an embedded headless Playwright engine for DOM-level automation that bypasses REST API rate limits entirely.
