@@ -129,3 +129,9 @@ This index maps every source file to its documentation section for rapid navigat
 | `src/shared/dto/ig-api.dto.ts` | [models.md § Zod Schemas](models.md#zod-runtime-validation-schemas) |
 | `src/shared/ui/` | [shared.md](shared.md) |
 | `src/tui/` | [tui.md](tui.md) |
+
+---
+
+## Legal Warning
+
+This project is for educational and research purposes only. The use of this software to automate interactions with Instagram may violate their Terms of Service. The maintainers of this project are not responsible for any account bans, suspensions, or other consequences that may arise from using this software. Use at your own risk.
