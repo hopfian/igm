@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/IGM_CoC_Banner.png" alt="Code of Conduct Banner" width="500" />
+  <img src="../../assets/IGM_CoC_Banner.png" alt="Code of Conduct Banner" width="500" />
 </div>
 
 # Contributor Covenant Code of Conduct
@@ -42,7 +42,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 ## Enforcement
 
 > [!WARNING]
-> Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders by opening a confidential GitHub Issue, or if public, a standard GitHub Issue in this repository. All complaints will be reviewed and investigated promptly and fairly.
+> Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders by emailing **step-wizard-spill@duck.com** or by opening a confidential GitHub Issue. All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

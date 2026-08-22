@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="../../assets/IGM_Security_Banner.png" alt="Security Banner" width="500" />
+</div>
+
 # Security Policy
 
 ## Supported Versions
@@ -13,7 +17,7 @@ Currently, only the latest release of IGM is actively supported for security upd
 
 We take the security of IGM and its users very seriously. If you discover a security vulnerability within IGM, please **DO NOT** open a public issue.
 
-Instead, please send an email to the project maintainers at **[imnotamotherfvkr@gmail.com]** (or report it via a confidential GitHub Security Advisory).
+Instead, please send an email to the project maintainers at **step-wizard-spill@duck.com** (or report it via a confidential GitHub Security Advisory).
 
 Please include the following information in your report:
 

@@ -159,10 +159,10 @@ This index maps every source file to its documentation section for rapid navigat
 
 ## Community & Contributing
 
-- [**Contributing Guidelines**](../CONTRIBUTING.md): Learn how to report bugs, suggest features, and submit pull requests.
-- [**Code of Conduct**](../CODE_OF_CONDUCT.md): Our pledge to maintain a welcoming, inclusive, and harassment-free community.
-- [**Security Policy**](../SECURITY.md): Instructions for reporting vulnerabilities safely.
-- [**Changelog**](CHANGELOG.md): History of all notable changes to the project.
+- [**Contributing Guidelines**](project/CONTRIBUTING.md): Learn how to report bugs, suggest features, and submit pull requests.
+- [**Code of Conduct**](project/CODE_OF_CONDUCT.md): Our pledge to maintain a welcoming, inclusive, and harassment-free community.
+- [**Security Policy**](project/SECURITY.md): Instructions for reporting vulnerabilities safely.
+- [**Changelog**](project/CHANGELOG.md): History of all notable changes to the project.
 
 For general questions, business inquiries, or private reports, please contact the maintainer at **step-wizard-spill@duck.com**.
 
@@ -180,7 +180,7 @@ Thanks to everyone who has contributed to IGM!
 
 ## License
 
-This project is licensed under the [ISC License](../LICENSE).
+This project is licensed under the [ISC License](project/LICENSE).
 
 ---
 
