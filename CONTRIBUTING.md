@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/IGM_Contribution_Banner.png" alt="Contribution Banner" width="500" />
+  <img src="assets/banners/IGM_Contribution_Banner.png" alt="Contribution Banner" width="500" />
 </div>
 
 # Contributing to IGM
