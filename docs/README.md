@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../assets/IGM_Logo.png" alt="IGM Logo" width="200" />
+  <img src="../assets/IGM_Logo.png" alt="IGM Logo" width="450" />
 </div>
 
 # IGM Developer Documentation
