@@ -132,6 +132,13 @@ This index maps every source file to its documentation section for rapid navigat
 
 ---
 
+## Community & Contributing
+
+- [**Contributing Guidelines**](../CONTRIBUTING.md): Learn how to report bugs, suggest features, and submit pull requests.
+- [**Code of Conduct**](../CODE_OF_CONDUCT.md): Our pledge to maintain a welcoming, inclusive, and harassment-free community.
+
+---
+
 ## Legal Warning
 
 This project is for educational and research purposes only. The use of this software to automate interactions with Instagram may violate their Terms of Service. The maintainers of this project are not responsible for any account bans, suspensions, or other consequences that may arise from using this software. Use at your own risk.
