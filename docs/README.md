@@ -17,7 +17,7 @@ This documentation is the authoritative source of truth for the IGM codebase. Ev
 
 ---
 
-## Table of Contents
+## <img src="../assets/icons/Git_Branch_Nodes.png" width="32" align="center" /> Table of Contents
 
 | Document | Layer | Description |
 |----------|-------|-------------|
@@ -31,7 +31,7 @@ This documentation is the authoritative source of truth for the IGM codebase. Ev
 
 ---
 
-## Architecture Overview
+## <img src="../assets/icons/Processor_Microchip_Core.png" width="32" align="center" /> Architecture Overview
 
 ```mermaid
 flowchart TD
@@ -93,7 +93,7 @@ src/
 
 ---
 
-## Configuration
+## <img src="../assets/icons/Configuration_Gear_Wrench.png" width="32" align="center" /> Configuration
 
 IGM uses the [`Conf`](https://github.com/sindresorhus/conf) package for XDG-compliant, OS-native configuration storage. The config is persisted automatically to the platform's standard config directory (e.g. `%APPDATA%/igm/` on Windows, `~/.config/igm/` on Linux).
 
@@ -116,7 +116,7 @@ IGM supports multiple named authentication profiles. When `activeProfile` is set
 
 ---
 
-## Global Export System
+## <img src="../assets/icons/Global_Network_Orbit.png" width="32" align="center" /> Global Export System
 
 Most read-only commands support four mutually compatible export modes, implemented via [`csv-exporter.ts`](../src/shared/utils/csv-exporter.ts):
 
@@ -131,7 +131,7 @@ When any export flag is active, the branded header and spinner UI are suppressed
 
 ---
 
-## Cross-Reference Index
+## <img src="../assets/icons/Bookmark_Reading_Book.png" width="32" align="center" /> Cross-Reference Index
 
 This index maps every source file to its documentation section for rapid navigation.
 
@@ -157,7 +157,7 @@ This index maps every source file to its documentation section for rapid navigat
 
 ---
 
-## Community & Contributing
+## <img src="../assets/icons/Community_Team_Group.png" width="32" align="center" /> Community & Contributing
 
 - [**Contributing Guidelines**](../CONTRIBUTING.md): Learn how to report bugs, suggest features, and submit pull requests.
 - [**Code of Conduct**](../CODE_OF_CONDUCT.md): Our pledge to maintain a welcoming, inclusive, and harassment-free community.
@@ -168,7 +168,7 @@ For general questions, business inquiries, or private reports, please contact th
 
 ---
 
-## Contributors
+## <img src="../assets/icons/Code_Editor_Window.png" width="32" align="center" /> Contributors
 
 Thanks to everyone who has contributed to IGM!
 
@@ -178,13 +178,13 @@ Thanks to everyone who has contributed to IGM!
 
 ---
 
-## License
+## <img src="../assets/icons/Document_Pencil_Edit.png" width="32" align="center" /> License
 
 This project is licensed under the [ISC License](../LICENSE).
 
 ---
 
-## Legal Warning
+## <img src="../assets/icons/Warning_Alert_Triangle.png" width="32" align="center" /> Legal Warning
 
 > [!WARNING]
 > This project is for educational and research purposes only. The use of this software to automate interactions with Instagram may violate their Terms of Service. The maintainers of this project are not responsible for any account bans, suspensions, or other consequences that may arise from using this software. Use at your own risk.
