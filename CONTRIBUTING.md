@@ -34,7 +34,18 @@ This section guides you through submitting an enhancement suggestion for IGM, in
 
 ### Pull Requests
 
-*   **Follow the existing code style.** IGM uses [Biome](https://biomejs.dev/) for linting and formatting. Run `npm run lint` or `npx biome check --write` before submitting your pull request.
+```mermaid
+gitGraph
+    commit id: "setup project"
+    branch feature
+    checkout feature
+    commit id: "add feature"
+    commit id: "npm run lint"
+    checkout main
+    merge feature id: "PR Approved"
+```
+
+*   **Follow the existing code style.** IGM uses [Biome](https://biomejs.dev/) for linting and formatting. Run <kbd>npm run lint</kbd> or <kbd>npx biome check --write</kbd> before submitting your pull request.
 *   **Ensure TypeScript compilation passes** without errors.
 *   **Update the documentation** in the `docs/` directory if you are adding new features, CLI commands, or modifying core logic. The documentation must stay in sync with the codebase.
 *   **Write commit messages** that are descriptive. We prefer the [Conventional Commits](https://www.conventionalcommits.org/) format (e.g., `feat: added new command`, `fix: resolved auth token issue`).

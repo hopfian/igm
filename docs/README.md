@@ -2,6 +2,12 @@
   <img src="../assets/IGM_Logo.png" alt="IGM Logo" width="500" />
 </div>
 
+<div align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-E1306C?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/build-passing-success?style=flat-square" alt="Build" />
+  <img src="https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square" alt="TypeScript" />
+</div>
+
 # IGM Developer Documentation
 
 IGM (Instagram Terminal) is a hardened command-line interface and interactive terminal dashboard for Instagram's internal private `api/v1` endpoints. It implements multi-layered anti-detection networking (TLS fingerprinting evasion, dynamic rollout hashing, log-normal request timing), domain-driven business logic encapsulation, and an embedded headless Playwright engine for DOM-level automation that bypasses REST API rate limits entirely.
@@ -25,6 +31,24 @@ This documentation is the authoritative source of truth for the IGM codebase. Ev
 ---
 
 ## Architecture Overview
+
+```mermaid
+flowchart TD
+    CLI[CLI Router] --> Core[Core Engine]
+    Core --> Auth[Auth Module]
+    Core --> Domain[Domain Modules]
+    Domain --> TUI[Terminal UI]
+    Domain --> Automation[IDMU Subsystem]
+    Automation --> Playwright[Headless Browser]
+    
+    style CLI fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+    style Core fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+    style Auth fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+    style Domain fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+    style TUI fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+    style Automation fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+    style Playwright fill:#1e1e1e,stroke:#E1306C,stroke-width:2px,color:#fff
+```
 
 ```
 src/
@@ -141,4 +165,5 @@ This index maps every source file to its documentation section for rapid navigat
 
 ## Legal Warning
 
-This project is for educational and research purposes only. The use of this software to automate interactions with Instagram may violate their Terms of Service. The maintainers of this project are not responsible for any account bans, suspensions, or other consequences that may arise from using this software. Use at your own risk.
+> [!WARNING]
+> This project is for educational and research purposes only. The use of this software to automate interactions with Instagram may violate their Terms of Service. The maintainers of this project are not responsible for any account bans, suspensions, or other consequences that may arise from using this software. Use at your own risk.
