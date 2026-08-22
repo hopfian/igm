@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGM - Instagram Terminal</title>
+    <meta name="description" content="Advanced, hardened command-line interface and interactive terminal dashboard for Instagram.">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar glass">
+        <div class="nav-content container">
+            <div class="nav-logo">
+                <img src="assets/IGM_Logo.png" alt="IGM Logo" class="logo-small">
+                <span>IGM.</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#architecture">Architecture</a>
+                <a href="https://github.com/hopfian/igm" target="_blank" rel="noopener" class="btn btn-outline">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero container">
+        <div class="hero-content">
+            <img src="assets/IGM_Logo.png" alt="IGM Logo" class="hero-logo float-anim">
+            <h1 class="glitch-text" data-text="Instagram Terminal">Instagram Terminal</h1>
+            <p class="subtitle">A hardened command-line interface and interactive dashboard bypassing API rate limits.</p>
+            <div class="hero-actions">
+                <a href="https://github.com/hopfian/igm#installation" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/hopfian/igm/tree/main/docs" class="btn btn-secondary">Documentation</a>
+            </div>
+        </div>
+        <div class="hero-terminal glass-panel">
+            <div class="terminal-header">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+            </div>
+            <div class="terminal-body">
+                <code><span class="prompt">~</span> <span class="command">npm run build:exe</span></code><br>
+                <code>[build] Compiling TypeScript...</code><br>
+                <code>[build] Building executable for target node18-win-x64...</code><br>
+                <code>[build] Done in 1.42s.</code><br>
+                <br>
+                <code><span class="prompt">~</span> <span class="command">./igm.exe dashboard</span></code><br>
+                <code class="success">Initializing IGClient...</code><br>
+                <code class="success">Bypassing TLS fingerprint... OK</code><br>
+                <code class="success">Live dashboard connected to timeline.</code><br>
+                <span class="cursor">_</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="features container">
+        <h2 class="section-title">Core Capabilities</h2>
+        <div class="features-grid">
+            
+            <div class="feature-card glass-panel fade-up">
+                <img src="assets/icons/Shield_Padlock_Security.png" alt="Anti-Detection" class="feature-icon">
+                <h3>Zero-Footprint</h3>
+                <p>Dynamic TLS fingerprint evasion, live rollout hash fetching, and log-normal request timing to accurately mimic human mobile client behavior.</p>
+            </div>
+
+            <div class="feature-card glass-panel fade-up" style="transition-delay: 0.1s;">
+                <img src="assets/icons/Processor_Microchip_Core.png" alt="Playwright Automation" class="feature-icon">
+                <h3>IDMU Automation</h3>
+                <p>Leverages headless Playwright orchestration for deep DOM manipulations bypassing backend API abuse heuristics.</p>
+            </div>
+
+            <div class="feature-card glass-panel fade-up" style="transition-delay: 0.2s;">
+                <img src="assets/icons/Code_Editor_Window.png" alt="Interactive Dashboard" class="feature-icon">
+                <h3>Interactive TUI</h3>
+                <p>A Blessed-powered split-pane terminal interface providing real-time inbox monitoring and interactive timeline streaming.</p>
+            </div>
+
+            <div class="feature-card glass-panel fade-up" style="transition-delay: 0.3s;">
+                <img src="assets/icons/Configuration_Gear_Wrench.png" alt="Profile Manager" class="feature-icon">
+                <h3>XDG Profile Manager</h3>
+                <p>Securely handles multi-account authentication, Netscape cookie parsing, and automatic CSRF token extraction.</p>
+            </div>
+            
+            <div class="feature-card glass-panel fade-up" style="transition-delay: 0.4s;">
+                <img src="assets/icons/Global_Network_Orbit.png" alt="Export System" class="feature-icon">
+                <h3>Universal Export</h3>
+                <p>Native support for piping and exporting any data structure to JSON, JSONL, or flattened CSV for external analytics.</p>
+            </div>
+
+            <div class="feature-card glass-panel fade-up" style="transition-delay: 0.5s;">
+                <img src="assets/icons/Warning_Alert_Triangle.png" alt="Architecture" class="feature-icon">
+                <h3>Domain-Driven Design</h3>
+                <p>Strictly isolates the hardened networking stack from business logic and the presentation layer for maintainability.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <img src="assets/IGM_Logo.png" alt="IGM Logo" class="logo-small grayscale">
+                <p>© 2026 IGM Project. Released under the ISC License.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/hopfian/igm">GitHub</a>
+                <a href="https://github.com/hopfian/igm/blob/main/docs/README.md">Docs</a>
+                <a href="https://github.com/hopfian/igm/blob/main/SECURITY.md">Security</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script src="script.js"></script>
+</body>
+</html>
