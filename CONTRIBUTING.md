@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/IGM_Contribution_Banner.png" alt="Contribution Banner" width="800" />
+</div>
+
 # Contributing to IGM
 
 First off, thank you for considering contributing to IGM (Instagram Terminal)! It's people like you that make this tool great.

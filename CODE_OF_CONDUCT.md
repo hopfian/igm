@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/IGM_CoC_Banner.png" alt="Code of Conduct Banner" width="800" />
+</div>
+
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
